@@ -1,0 +1,402 @@
+-- =============================================================================
+-- SEED DE DADOS FICTÍCIOS — MÓDULOS DE MARKETING (DEMO)
+-- =============================================================================
+-- Preenche as tabelas do schema "wpp" (lido pelo frontend via supabaseWpp,
+-- schema separado do Postgres principal — ver src/integrations/supabase/wppClient.ts)
+-- com dados 100% fictícios, coerentes e com matemática consistente, cobrindo
+-- Meta Ads, Instagram, E-mail Marketing e Campanhas WhatsApp para o período
+-- de 2026-07-01 a 2026-09-30.
+--
+-- IDEMPOTENTE: cada bloco apaga antes as linhas-demo (por chave fixa / faixa de
+-- data) e insere de novo — pode ser executado quantas vezes for preciso sem
+-- duplicar dados. Nenhuma tabela nova é criada: todas as tabelas abaixo já são
+-- consultadas pelo frontend (src/hooks/useMetaAdsInsights.ts,
+-- useInstagramInsights.ts, useEmailMarketing.ts, useWppCampanhasResumo.ts) e
+-- presumidamente existem no schema "wpp" do projeto Supabase, gerenciado fora
+-- das migrations deste repositório.
+--
+-- Rode este arquivo inteiro no SQL Editor do Supabase (projeto ligado ao
+-- schema "wpp"). Requer a extensão pgcrypto/pgcrypto (gen_random_uuid()),
+-- já habilitada por padrão em projetos Supabase.
+-- =============================================================================
+
+BEGIN;
+
+SELECT setseed(0.4242);
+
+-- -----------------------------------------------------------------------------
+-- 1) META ADS — wpp.meta_ads_insights
+-- -----------------------------------------------------------------------------
+-- Duas contas fictícias, diferenciadas pelo prefixo do campaign_name (a tabela
+-- não tem coluna de conta/account_id — o frontend agrupa só por campaign_id):
+--   Conta A "Moda Prime Ateliê"        → prefixo "[Moda Prime]"  (performance regular)
+--   Conta B "Studio Confecção Digital" → prefixo "[Studio CD]"   (performance forte)
+-- 3 campanhas por conta, granularidade diária, 2026-07-01 a 2026-09-30 (92 dias).
+
+DELETE FROM wpp.meta_ads_insights
+WHERE campaign_id IN (
+  '11111111-1111-4111-8111-111111111101',
+  '11111111-1111-4111-8111-111111111102',
+  '11111111-1111-4111-8111-111111111103',
+  '22222222-2222-4222-8222-222222222201',
+  '22222222-2222-4222-8222-222222222202',
+  '22222222-2222-4222-8222-222222222203'
+);
+
+WITH params AS (
+  SELECT * FROM (VALUES
+    ('11111111-1111-4111-8111-111111111101'::uuid, '[Moda Prime] Curso Corte e Costura',  'A', 2200::numeric, 0.0090::numeric, 1.35::numeric, 0.045::numeric, 0.08::numeric,  780::numeric),
+    ('11111111-1111-4111-8111-111111111102'::uuid, '[Moda Prime] Remarketing Carrinho',   'A',  900::numeric, 0.0140::numeric, 1.10::numeric, 0.090::numeric, 0.15::numeric,  780::numeric),
+    ('11111111-1111-4111-8111-111111111103'::uuid, '[Moda Prime] Institucional',          'A', 1500::numeric, 0.0070::numeric, 1.60::numeric, 0.055::numeric, 0.05::numeric,  780::numeric),
+    ('22222222-2222-4222-8222-222222222201'::uuid, '[Studio CD] Lançamento Mentoria PRO', 'B', 3200::numeric, 0.0210::numeric, 0.85::numeric, 0.070::numeric, 0.22::numeric, 1450::numeric),
+    ('22222222-2222-4222-8222-222222222202'::uuid, '[Studio CD] Leads Frio - Interesse',  'B', 2600::numeric, 0.0160::numeric, 0.95::numeric, 0.060::numeric, 0.12::numeric, 1450::numeric),
+    ('22222222-2222-4222-8222-222222222203'::uuid, '[Studio CD] Retargeting Vídeo',       'B', 1100::numeric, 0.0280::numeric, 0.70::numeric, 0.130::numeric, 0.30::numeric, 1450::numeric)
+  ) AS t(campaign_id, campaign_name, account, base_impr, base_ctr, base_cpc, conv_rate, purchase_rate, avg_ticket)
+),
+days AS (
+  SELECT d::date AS d, (d::date - DATE '2026-07-01') AS day_idx, EXTRACT(DOW FROM d) AS dow
+  FROM generate_series(DATE '2026-07-01', DATE '2026-09-30', interval '1 day') AS d
+),
+base AS (
+  SELECT
+    p.campaign_id, p.campaign_name, p.account, d.d AS date_start,
+    p.base_impr, p.base_ctr, p.base_cpc, p.conv_rate, p.purchase_rate, p.avg_ticket,
+    (1 + (d.day_idx::numeric / 92) * 0.30) AS trend,
+    (CASE WHEN d.dow IN (0, 6) THEN 0.70 ELSE 1.0 END) AS dow_factor
+  FROM params p CROSS JOIN days d
+),
+step1 AS (
+  SELECT *, GREATEST(1, ROUND(base_impr * trend * dow_factor * (0.85 + random() * 0.30))) AS impressions
+  FROM base
+),
+step2 AS (
+  SELECT *, ROUND(impressions * (base_ctr * (0.80 + random() * 0.40))) AS clicks
+  FROM step1
+),
+step3 AS (
+  SELECT *,
+    ROUND((clicks * (base_cpc * (0.85 + random() * 0.30)))::numeric, 2) AS spend,
+    ROUND(clicks * conv_rate * (0.80 + random() * 0.40)) AS leads
+  FROM step2
+),
+step4 AS (
+  SELECT *, ROUND(leads * purchase_rate * (0.70 + random() * 0.60)) AS purchases
+  FROM step3
+),
+step5 AS (
+  SELECT *,
+    ROUND((purchases * avg_ticket * (0.85 + random() * 0.30))::numeric, 2) AS purchase_value,
+    ROUND(impressions / (1.3 + random() * 0.5)) AS reach
+  FROM step4
+)
+INSERT INTO wpp.meta_ads_insights
+  (campaign_id, campaign_name, date_start, date_stop, impressions, clicks, spend, leads, purchases, purchase_value, cpl, roas, reach, synced_at)
+SELECT
+  campaign_id, campaign_name, date_start, date_start,
+  impressions::integer, clicks::integer, spend, leads::integer, purchases::integer, purchase_value,
+  CASE WHEN leads > 0 THEN ROUND((spend / leads)::numeric, 2) ELSE 0 END,
+  CASE WHEN spend > 0 THEN ROUND((purchase_value / spend)::numeric, 2) ELSE 0 END,
+  reach::integer, now()
+FROM step5;
+
+-- -----------------------------------------------------------------------------
+-- 2) INSTAGRAM — wpp.instagram_account_daily / instagram_profile_daily / instagram_post_insights
+-- -----------------------------------------------------------------------------
+-- Duas contas: os usernames abaixo são os mesmos já hard-coded no frontend
+-- (src/components/MarketingSection.tsx: ACCOUNT_LABEL, filtro de conta), por
+-- isso são reaproveitados tal como estão no código-fonte para que o filtro de
+-- conta e os KPIs "@EC" / "@CS" funcionem sem alterar a UI.
+--   eduardocristianoriginal → perfil pessoal (menor base, crescimento moderado)
+--   costurandosucesso       → perfil institucional (base maior, crescimento mais forte)
+
+DELETE FROM wpp.instagram_account_daily
+WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
+DELETE FROM wpp.instagram_profile_daily
+WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
+DELETE FROM wpp.instagram_post_insights
+WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
+
+WITH accounts AS (
+  SELECT * FROM (VALUES
+    ('33333333-3333-4333-8333-333333333301'::uuid, 'eduardocristianoriginal', 18400::numeric, 120::numeric, 40::numeric, 18::numeric, 14::numeric, 8::numeric),
+    ('33333333-3333-4333-8333-333333333302'::uuid, 'costurandosucesso',       26800::numeric, 340::numeric, 68::numeric, 26::numeric, 22::numeric, 12::numeric)
+  ) AS t(account_id, username, start_followers, start_media, avg_gain, gain_var, avg_loss, loss_var)
+),
+days AS (
+  SELECT d::date AS d, (d::date - DATE '2026-07-01') AS day_idx
+  FROM generate_series(DATE '2026-07-01', DATE '2026-09-30', interval '1 day') AS d
+),
+raw AS (
+  SELECT
+    a.account_id, a.username, d.d AS date, d.day_idx, a.start_followers, a.start_media,
+    GREATEST(0, ROUND(a.avg_gain + (random() * 2 - 1) * a.gain_var)) AS followers_gained,
+    GREATEST(0, ROUND(a.avg_loss + (random() * 2 - 1) * a.loss_var)) AS followers_lost
+  FROM accounts a CROSS JOIN days d
+),
+cum AS (
+  SELECT *,
+    (start_followers + SUM(followers_gained - followers_lost) OVER (PARTITION BY account_id ORDER BY date))::integer AS followers_count,
+    (start_media + FLOOR(day_idx / 2))::integer AS media_count
+  FROM raw
+)
+INSERT INTO wpp.instagram_account_daily (account_id, username, date, followers_count, media_count, followers_gained, followers_lost)
+SELECT account_id, username, date, followers_count, media_count, followers_gained::integer, followers_lost::integer
+FROM cum;
+
+INSERT INTO wpp.instagram_profile_daily (account_id, username, date, profile_views, website_clicks)
+SELECT
+  account_id, username, date,
+  ROUND(followers_count * (0.008 + random() * 0.010))::integer AS profile_views,
+  ROUND(followers_count * (0.0008 + random() * 0.0012))::integer AS website_clicks
+FROM wpp.instagram_account_daily
+WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
+
+WITH accounts AS (
+  SELECT * FROM (VALUES
+    ('33333333-3333-4333-8333-333333333301'::uuid, 'eduardocristianoriginal', 21000::numeric),
+    ('33333333-3333-4333-8333-333333333302'::uuid, 'costurandosucesso',       32000::numeric)
+  ) AS t(account_id, username, base_reach)
+),
+posts AS (
+  SELECT
+    a.account_id, a.username, a.base_reach, gs AS post_idx,
+    (TIMESTAMP '2026-07-01 08:00:00' + (gs * interval '2.5 days') + (make_interval(hours => (8 + (gs % 11))))) AS posted_at
+  FROM accounts a CROSS JOIN generate_series(0, 36) gs
+),
+enriched AS (
+  SELECT *, (ARRAY['IMAGE', 'VIDEO', 'CAROUSEL_ALBUM'])[1 + (post_idx % 3)] AS media_type
+  FROM posts
+)
+INSERT INTO wpp.instagram_post_insights
+  (post_id, account_id, username, posted_at, media_type, permalink, caption, like_count, comments_count, shares, saved, reach, impressions, views, synced_at)
+SELECT
+  gen_random_uuid()::text,
+  account_id, username, posted_at, media_type,
+  'https://instagram.com/p/demo' || REPLACE(gen_random_uuid()::text, '-', ''),
+  CASE media_type
+    WHEN 'VIDEO'           THEN 'Bastidores da produção de hoje 🧵✂️ #confeccao #modabrasileira #bastidores'
+    WHEN 'CAROUSEL_ALBUM'  THEN '5 erros que encarecem sua produção sem você perceber 👇 #gestaodeconfeccao #moda'
+    ELSE                        'Novo lote pronto para envio! Qualidade que o cliente sente. #confeccao #producao'
+  END,
+  ROUND(base_reach * (0.020 + random() * 0.050))::integer AS like_count,
+  ROUND(base_reach * (0.0010 + random() * 0.0040))::integer AS comments_count,
+  ROUND(base_reach * (0.0005 + random() * 0.0020))::integer AS shares,
+  ROUND(base_reach * (0.0020 + random() * 0.0060))::integer AS saved,
+  ROUND(base_reach * (0.80 + random() * 0.50))::integer AS reach,
+  ROUND(base_reach * (1.10 + random() * 0.60))::integer AS impressions,
+  CASE WHEN media_type = 'VIDEO' THEN ROUND(base_reach * (1.50 + random() * 1.50))::integer ELSE 0 END AS views,
+  now()
+FROM enriched;
+
+-- -----------------------------------------------------------------------------
+-- 3) E-MAIL MARKETING — wpp.email_campaigns
+-- -----------------------------------------------------------------------------
+-- ~51 campanhas (45 regulares + 3 pares A/B = 6) espalhadas de 2026-07-01 a
+-- 2026-09-30, alternando newsletter/comercial, com matemática consistente
+-- (delivered a partir de delivery_rate; bounce_rate = 100 - delivery_rate).
+
+DELETE FROM wpp.email_campaigns
+WHERE sent_at BETWEEN '2026-07-01' AND '2026-09-30 23:59:59'
+  AND name LIKE 'CS Digital:%';
+
+WITH idx AS (
+  SELECT gs AS i FROM generate_series(0, 44) gs
+),
+rows1 AS (
+  SELECT
+    i,
+    (TIMESTAMP '2026-07-01 07:30:00' + (i * interval '2 days') + (make_interval(hours => (i % 5)))) AS sent_at,
+    CASE WHEN i % 2 = 0 THEN 'commercial' ELSE 'news' END AS type,
+    (ARRAY[
+      'Últimas vagas: Turma de Corte e Costura Avançado',
+      'Como reduzir 20% do desperdício de tecido na sua confecção',
+      '[Aviso] Sua produção está pronta para a próxima coleção?',
+      'Webinar gratuito: gestão de equipe na confecção',
+      'Guia rápido: precificação sem perder margem',
+      'Convite exclusivo: Mentoria Coletiva de Setembro',
+      'O erro nº 1 que trava o crescimento de confecções pequenas',
+      'Última chamada — inscrições encerram hoje',
+      'Novidade: checklist de fornecedores confiáveis',
+      'Case de sucesso: de 3 para 12 funcionários em 1 ano'
+    ])[1 + (i % 10)] AS subject,
+    (ARRAY[
+      'CS Digital: Newsletter Semanal',
+      'CS Digital: Oferta Comercial',
+      'CS Digital: Convite Evento',
+      'CS Digital: Conteúdo Educativo',
+      'CS Digital: Lembrete Turma'
+    ])[1 + (i % 5)] || ' #' || (i + 1) AS name
+  FROM idx
+),
+rows2 AS (
+  SELECT
+    *,
+    (3200 + (random() * 2000))::numeric AS recipients_f,
+    (96.0 + random() * 3.4)::numeric AS delivery_rate_f,
+    (CASE WHEN type = 'news' THEN 22 + random() * 16 ELSE 16 + random() * 14 END)::numeric AS open_rate_f,
+    (CASE WHEN type = 'news' THEN 1.8 + random() * 2.5 ELSE 1.2 + random() * 2.0 END)::numeric AS click_rate_f,
+    (0.02 + random() * 0.12)::numeric AS spam_rate_f,
+    (0.05 + random() * 0.55)::numeric AS unsubscribe_rate_f
+  FROM rows1
+),
+rows3 AS (
+  SELECT
+    *,
+    ROUND(recipients_f)::integer AS recipients,
+    ROUND(recipients_f * delivery_rate_f / 100)::integer AS delivered
+  FROM rows2
+)
+INSERT INTO wpp.email_campaigns
+  (name, type, subject, sent_at, version, ab_group_id, recipients, delivered, delivery_rate, open_rate, click_rate,
+   bounce_rate, spam_rate, unsubscribe_rate, engaged, disengaged, indeterminate, invalid, synced_at)
+SELECT
+  name, type, subject, sent_at, 'general', NULL,
+  recipients, delivered,
+  ROUND(delivery_rate_f, 2), ROUND(open_rate_f, 2), ROUND(click_rate_f, 2),
+  ROUND(100 - delivery_rate_f, 2), ROUND(spam_rate_f, 3), ROUND(unsubscribe_rate_f, 3),
+  ROUND(delivered * open_rate_f / 100)::integer AS engaged,
+  GREATEST(0, delivered - ROUND(delivered * open_rate_f / 100)::integer - ROUND(delivered * unsubscribe_rate_f / 100)::integer) AS disengaged,
+  ROUND(recipients * 0.01)::integer AS indeterminate,
+  (recipients - delivered) AS invalid,
+  now()
+FROM rows3;
+
+-- 3 pares de teste A/B (6 campanhas adicionais), datas fixas dentro do período
+WITH ab AS (
+  SELECT * FROM (VALUES
+    (gen_random_uuid(), 'CS Digital: Teste A/B Lançamento Julho',   TIMESTAMP '2026-07-15 08:00:00', 'commercial'),
+    (gen_random_uuid(), 'CS Digital: Teste A/B Newsletter Agosto',  TIMESTAMP '2026-08-12 07:45:00', 'news'),
+    (gen_random_uuid(), 'CS Digital: Teste A/B Oferta Setembro',    TIMESTAMP '2026-09-10 08:15:00', 'commercial')
+  ) AS t(ab_group_id, base_name, sent_at, type)
+),
+variants AS (
+  SELECT ab.*, v.version, v.subject_suffix, v.open_boost, v.click_boost
+  FROM ab CROSS JOIN (VALUES
+    ('A', ' — Assunto direto',  0.0, 0.0),
+    ('B', ' — Assunto com gatilho de urgência', 4.5, 0.8)
+  ) AS v(version, subject_suffix, open_boost, click_boost)
+),
+computed AS (
+  SELECT
+    *,
+    (3800 + random() * 1500)::numeric AS recipients_f,
+    (97.0 + random() * 2.5)::numeric AS delivery_rate_f,
+    (20 + random() * 12 + open_boost)::numeric AS open_rate_f,
+    (1.5 + random() * 2.2 + click_boost)::numeric AS click_rate_f,
+    (0.02 + random() * 0.08)::numeric AS spam_rate_f,
+    (0.08 + random() * 0.35)::numeric AS unsubscribe_rate_f
+  FROM variants
+),
+final AS (
+  SELECT *, ROUND(recipients_f)::integer AS recipients, ROUND(recipients_f * delivery_rate_f / 100)::integer AS delivered
+  FROM computed
+)
+INSERT INTO wpp.email_campaigns
+  (name, type, subject, sent_at, version, ab_group_id, recipients, delivered, delivery_rate, open_rate, click_rate,
+   bounce_rate, spam_rate, unsubscribe_rate, engaged, disengaged, indeterminate, invalid, synced_at)
+SELECT
+  base_name || ' (' || version || ')', type, base_name || subject_suffix, sent_at, version, ab_group_id,
+  recipients, delivered,
+  ROUND(delivery_rate_f, 2), ROUND(open_rate_f, 2), ROUND(click_rate_f, 2),
+  ROUND(100 - delivery_rate_f, 2), ROUND(spam_rate_f, 3), ROUND(unsubscribe_rate_f, 3),
+  ROUND(delivered * open_rate_f / 100)::integer AS engaged,
+  GREATEST(0, delivered - ROUND(delivered * open_rate_f / 100)::integer - ROUND(delivered * unsubscribe_rate_f / 100)::integer) AS disengaged,
+  ROUND(recipients * 0.01)::integer AS indeterminate,
+  (recipients - delivered) AS invalid,
+  now()
+FROM final;
+
+-- -----------------------------------------------------------------------------
+-- 4) WHATSAPP — wpp.campaigns / wpp.campaign_sends
+-- -----------------------------------------------------------------------------
+-- 12 campanhas espalhadas de 2026-07-01 a 2026-09-20, cada uma com centenas a
+-- milhares de envios individuais em campaign_sends. Taxas fixas por envio
+-- (4% falha, 55% lida, 35% entregue-não-lida, 6% só enviada) garantem que os
+-- totais agregados batem com o esperado pelo hook useWppCampanhasResumo.
+
+DELETE FROM wpp.campaign_sends
+WHERE campaign_id IN (
+  '44444444-4444-4444-8444-444444444401','44444444-4444-4444-8444-444444444402',
+  '44444444-4444-4444-8444-444444444403','44444444-4444-4444-8444-444444444404',
+  '44444444-4444-4444-8444-444444444405','44444444-4444-4444-8444-444444444406',
+  '44444444-4444-4444-8444-444444444407','44444444-4444-4444-8444-444444444408',
+  '44444444-4444-4444-8444-444444444409','44444444-4444-4444-8444-444444444410',
+  '44444444-4444-4444-8444-444444444411','44444444-4444-4444-8444-444444444412'
+);
+DELETE FROM wpp.campaigns
+WHERE id IN (
+  '44444444-4444-4444-8444-444444444401','44444444-4444-4444-8444-444444444402',
+  '44444444-4444-4444-8444-444444444403','44444444-4444-4444-8444-444444444404',
+  '44444444-4444-4444-8444-444444444405','44444444-4444-4444-8444-444444444406',
+  '44444444-4444-4444-8444-444444444407','44444444-4444-4444-8444-444444444408',
+  '44444444-4444-4444-8444-444444444409','44444444-4444-4444-8444-444444444410',
+  '44444444-4444-4444-8444-444444444411','44444444-4444-4444-8444-444444444412'
+);
+
+WITH camp AS (
+  SELECT * FROM (VALUES
+    ('44444444-4444-4444-8444-444444444401'::uuid, 'Boas-vindas Novo Lead',              TIMESTAMP '2026-07-02 09:00:00', 420),
+    ('44444444-4444-4444-8444-444444444402'::uuid, 'Reativação Leads Frios - Julho',     TIMESTAMP '2026-07-09 10:00:00', 1350),
+    ('44444444-4444-4444-8444-444444444403'::uuid, 'Lembrete Webinar Gratuito',          TIMESTAMP '2026-07-18 14:00:00', 890),
+    ('44444444-4444-4444-8444-444444444404'::uuid, 'Convite Mentoria Coletiva',          TIMESTAMP '2026-07-27 09:30:00', 610),
+    ('44444444-4444-4444-8444-444444444405'::uuid, 'Recuperação Carrinho Curso',         TIMESTAMP '2026-08-05 11:00:00', 740),
+    ('44444444-4444-4444-8444-444444444406'::uuid, 'Pesquisa de Satisfação Alunos',      TIMESTAMP '2026-08-13 15:00:00', 520),
+    ('44444444-4444-4444-8444-444444444407'::uuid, 'Promoção Relâmpago Materiais',       TIMESTAMP '2026-08-20 09:00:00', 1680),
+    ('44444444-4444-4444-8444-444444444408'::uuid, 'Convite Live Instagram',             TIMESTAMP '2026-08-28 16:00:00', 460),
+    ('44444444-4444-4444-8444-444444444409'::uuid, 'Lançamento Turma Setembro',          TIMESTAMP '2026-09-03 09:00:00', 2100),
+    ('44444444-4444-4444-8444-444444444410'::uuid, 'Follow-up Pós-Evento',               TIMESTAMP '2026-09-10 10:30:00', 780),
+    ('44444444-4444-4444-8444-444444444411'::uuid, 'Oferta Última Chamada',              TIMESTAMP '2026-09-16 08:00:00', 950),
+    ('44444444-4444-4444-8444-444444444412'::uuid, 'Alerta Vagas Limitadas',             TIMESTAMP '2026-09-20 09:00:00', 630)
+  ) AS t(id, name, created_at, total_target)
+)
+INSERT INTO wpp.campaigns (id, name, status, created_at)
+SELECT id, name, CASE WHEN created_at > TIMESTAMP '2026-09-19' THEN 'firing' ELSE 'completed' END, created_at
+FROM camp;
+
+WITH camp AS (
+  SELECT * FROM (VALUES
+    ('44444444-4444-4444-8444-444444444401'::uuid, TIMESTAMP '2026-07-02 09:00:00', 420),
+    ('44444444-4444-4444-8444-444444444402'::uuid, TIMESTAMP '2026-07-09 10:00:00', 1350),
+    ('44444444-4444-4444-8444-444444444403'::uuid, TIMESTAMP '2026-07-18 14:00:00', 890),
+    ('44444444-4444-4444-8444-444444444404'::uuid, TIMESTAMP '2026-07-27 09:30:00', 610),
+    ('44444444-4444-4444-8444-444444444405'::uuid, TIMESTAMP '2026-08-05 11:00:00', 740),
+    ('44444444-4444-4444-8444-444444444406'::uuid, TIMESTAMP '2026-08-13 15:00:00', 520),
+    ('44444444-4444-4444-8444-444444444407'::uuid, TIMESTAMP '2026-08-20 09:00:00', 1680),
+    ('44444444-4444-4444-8444-444444444408'::uuid, TIMESTAMP '2026-08-28 16:00:00', 460),
+    ('44444444-4444-4444-8444-444444444409'::uuid, TIMESTAMP '2026-09-03 09:00:00', 2100),
+    ('44444444-4444-4444-8444-444444444410'::uuid, TIMESTAMP '2026-09-10 10:30:00', 780),
+    ('44444444-4444-4444-8444-444444444411'::uuid, TIMESTAMP '2026-09-16 08:00:00', 950),
+    ('44444444-4444-4444-8444-444444444412'::uuid, TIMESTAMP '2026-09-20 09:00:00', 630)
+  ) AS t(campaign_id, base_time, total_target)
+),
+sends AS (
+  SELECT
+    c.campaign_id,
+    (c.base_time + (gs || ' seconds')::interval) AS sent_at,
+    random() AS r
+  FROM camp c CROSS JOIN LATERAL generate_series(1, c.total_target) AS gs
+)
+INSERT INTO wpp.campaign_sends (campaign_id, status, sent_at, created_at)
+SELECT
+  campaign_id,
+  CASE
+    WHEN r < 0.04 THEN 'failed'
+    WHEN r < 0.59 THEN 'read'
+    WHEN r < 0.94 THEN 'delivered'
+    ELSE 'sent'
+  END,
+  sent_at, sent_at
+FROM sends;
+
+COMMIT;
+
+-- =============================================================================
+-- Fim do seed. Resumo aproximado de linhas inseridas:
+--   wpp.meta_ads_insights        : 6 campanhas x 92 dias  = 552 linhas
+--   wpp.instagram_account_daily  : 2 contas   x 92 dias   = 184 linhas
+--   wpp.instagram_profile_daily  : 2 contas   x 92 dias   = 184 linhas
+--   wpp.instagram_post_insights  : 2 contas   x 37 posts  =  74 linhas
+--   wpp.email_campaigns          : 45 + 6 (A/B)           =  51 linhas
+--   wpp.campaigns                : 12 linhas
+--   wpp.campaign_sends           : soma dos total_target  ≈ 11.050 linhas
+-- =============================================================================
