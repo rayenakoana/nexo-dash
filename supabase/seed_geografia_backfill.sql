@@ -31,7 +31,7 @@ WITH pool AS (
     ('CE', ARRAY['Fortaleza','Juazeiro do Norte','Sobral']),
     ('ES', ARRAY['Vitória','Vila Velha','Serra']),
     ('DF', ARRAY['Brasília']),
-    ('MT', ARRAY['Cuiabá','Rondonópolis']),
+    ('MT', ARRAY['Cuiabá','Várzea Grande','Rondonópolis','Sinop','Sorriso']),
     ('MS', ARRAY['Campo Grande','Dourados']),
     ('PA', ARRAY['Belém','Ananindeua']),
     ('AM', ARRAY['Manaus']),
@@ -48,10 +48,15 @@ WITH pool AS (
     ('RR', ARRAY['Boa Vista'])
   ) AS t(uf, cidades)
 )
+-- Match uf case/whitespace-insensitively: a prior run of this backfill left
+-- Mato Grosso (and possibly other states) unfixed because the real `uf`
+-- column value did not exactly equality-match the pool's uppercase 2-letter
+-- code (e.g. trailing whitespace, or lowercase). upper(btrim(...)) makes the
+-- match robust to both without assuming a specific stored format.
 UPDATE leads_geografia lg
 SET cidade = pool.cidades[1 + (abs(hashtext(lg.deal_id::text)) % array_length(pool.cidades, 1))]
 FROM pool
-WHERE pool.uf = lg.uf
+WHERE pool.uf = upper(btrim(lg.uf))
   AND (lg.cidade IS NULL OR btrim(lg.cidade) = '' OR lg.cidade ILIKE 'cidade não informada' OR lg.cidade ILIKE 'nao informad%');
 
 COMMIT;

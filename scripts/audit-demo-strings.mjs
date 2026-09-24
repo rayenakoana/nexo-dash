@@ -26,6 +26,12 @@ const BANNED = [
   // Standalone "CS"/"C$" used as a brand abbreviation, e.g. "CS Digital:", "(CS)".
   { pattern: /\bCS Digital\b/, label: "CS Digital (old brand abbreviation)" },
   { pattern: /\(CS\)/, label: "(CS) brand abbreviation" },
+  { pattern: /\bCS Club\b/i, label: "CS Club (real product)" },
+  { pattern: /imers[aã]o\s*paraguai/i, label: "Imersão Paraguai (real product)" },
+  { pattern: /\[paraguai\]/i, label: "[PARAGUAI] (real campaign tag)" },
+  { pattern: /\[diagn[oó]stico\]/i, label: "[Diagnóstico] (real campaign tag)" },
+  { pattern: /\[supplytex\]/i, label: "[SUPPLYTEX] (real campaign tag)" },
+  { pattern: /\[costurandosucesso\]/i, label: "[CosturandoSucesso] (real campaign tag)" },
 ];
 
 // Files/dirs to scan. Keep this list small and targeted (source + seed files),
@@ -83,7 +89,7 @@ const ALLOWLIST_FILES = [/migrations\/20260804133530_funil_supplytex_e_visibilid
 // a leak — the string appears only as a scrub target. Everything else still
 // gets flagged, including a re-introduction of the string as brand-facing
 // content in the same files.
-const CLEANUP_LINE = /(DELETE FROM|UPDATE\s|ILIKE|LIKE '|=\s*'[^']*'|--.*\.sql|--.*\(ex\.)/i;
+const CLEANUP_LINE = /(DELETE FROM|UPDATE\s|ILIKE|LIKE '|=\s*'[^']*'|--.*\.sql|--.*\(ex\.|WHERE\s.*\bIN\s*\(|→\s*"?'?Nexo )/i;
 
 hits = hits.filter((h) => {
   if (ALLOWLIST_FILES.some((re) => re.test(h.file))) return false;

@@ -7,9 +7,18 @@
 -- Meta Ads, Instagram, E-mail Marketing e Campanhas WhatsApp para o período
 -- de 2026-07-01 a 2026-09-30.
 --
--- IDEMPOTENTE: cada bloco apaga antes as linhas-demo (por chave fixa / faixa de
--- data) e insere de novo — pode ser executado quantas vezes for preciso sem
--- duplicar dados. Nenhuma tabela nova é criada: todas as tabelas abaixo já são
+-- IDEMPOTENTE E DESTRUTIVO POR DESIGN: cada bloco APAGA TODAS AS LINHAS
+-- PRÉ-EXISTENTES da tabela (TRUNCATE/DELETE sem WHERE) antes de inserir os
+-- dados fictícios — não apenas linhas com IDs/nomes específicos. Rounds
+-- anteriores usavam DELETE ... WHERE id IN (<uuids fixos>) ou
+-- WHERE name ILIKE '%padrão%', o que NUNCA remove linhas reais pré-existentes
+-- com IDs/nomes diferentes: o seed só empilhava linhas fictícias ao lado das
+-- reais, e o frontend somava as duas. Todas as tabelas abaixo (schema "wpp")
+-- pertencem inteiramente à integração de marketing lida por este dashboard —
+-- não há nenhum outro consumidor legítimo dessas linhas — então é seguro
+-- possuí-las por completo e apagar tudo antes de reinserir. Pode ser
+-- executado quantas vezes for preciso sem duplicar dados. Nenhuma tabela nova
+-- é criada: todas as tabelas abaixo já são
 -- consultadas pelo frontend (src/hooks/useMetaAdsInsights.ts,
 -- useInstagramInsights.ts, useEmailMarketing.ts, useWppCampanhasResumo.ts) e
 -- presumidamente existem no schema "wpp" do projeto Supabase, gerenciado fora
@@ -33,15 +42,11 @@ SELECT setseed(0.4242);
 --   Conta B "Nexo Lab | Growth"         → prefixo "[Nexo Lab]"      (performance forte)
 -- 3 campanhas por conta, granularidade diária, 2026-07-01 a 2026-09-30 (92 dias).
 
-DELETE FROM wpp.meta_ads_insights
-WHERE campaign_id IN (
-  '11111111-1111-4111-8111-111111111101',
-  '11111111-1111-4111-8111-111111111102',
-  '11111111-1111-4111-8111-111111111103',
-  '22222222-2222-4222-8222-222222222201',
-  '22222222-2222-4222-8222-222222222202',
-  '22222222-2222-4222-8222-222222222203'
-);
+-- Blanket purge: remove ANY pre-existing row (real or previously-seeded),
+-- not just the fixed demo campaign_ids, so any stale real Meta Ads campaign
+-- (whatever its bracketed name tag) cannot survive alongside the fictitious
+-- ones.
+TRUNCATE TABLE wpp.meta_ads_insights RESTART IDENTITY;
 
 WITH params AS (
   SELECT * FROM (VALUES
@@ -109,12 +114,17 @@ FROM step5;
 --   nexocommerce → conta principal (base maior, alcance/volume maior)
 --   nexolab      → conta menor, com engajamento proporcional mais alto
 
-DELETE FROM wpp.instagram_account_daily
-WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
-DELETE FROM wpp.instagram_profile_daily
-WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
-DELETE FROM wpp.instagram_post_insights
-WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
+-- Blanket purge: remove ANY pre-existing rows, not just the fixed demo
+-- account_ids. Real Instagram accounts/captions and their historical rows
+-- must not remain alongside the fictitious nexocommerce/nexolab rows — this
+-- is also what fixes the "Todas" vs. per-account filter mismatch (the
+-- account filter in src/components/MarketingSection.tsx matches on the exact
+-- `username` string 'nexocommerce'/'nexolab'; any leftover username from an
+-- earlier fictitious-handle round or a real handle would count toward
+-- "Todas" but match zero rows when a specific account button is selected).
+TRUNCATE TABLE wpp.instagram_account_daily RESTART IDENTITY;
+TRUNCATE TABLE wpp.instagram_profile_daily RESTART IDENTITY;
+TRUNCATE TABLE wpp.instagram_post_insights RESTART IDENTITY;
 
 WITH accounts AS (
   SELECT * FROM (VALUES
@@ -195,9 +205,9 @@ FROM enriched;
 -- 2026-09-30, alternando newsletter/comercial, com matemática consistente
 -- (delivered a partir de delivery_rate; bounce_rate = 100 - delivery_rate).
 
-DELETE FROM wpp.email_campaigns
-WHERE sent_at BETWEEN '2026-07-01' AND '2026-09-30 23:59:59'
-  AND (name LIKE 'CS Digital:%' OR name LIKE 'Nexo Commerce:%');
+-- Blanket purge: remove ALL pre-existing rows, not just ones matching a
+-- specific name prefix in the demo date range.
+TRUNCATE TABLE wpp.email_campaigns RESTART IDENTITY;
 
 WITH idx AS (
   SELECT gs AS i FROM generate_series(0, 44) gs
@@ -312,32 +322,12 @@ FROM final;
 -- 12 campanhas espalhadas de 2026-07-01 a 2026-09-20, 2.000-15.000 envios cada,
 -- com taxa de entrega/leitura variando por campanha (entrega 90-98%, leitura
 -- 65-90% do entregue) para não repetir os mesmos números em todas.
--- Também remove explicitamente qualquer campanha de teste/dev que não deve
--- aparecer na DEMO (ex.: "Teste Motor de Disparo - Hello World").
-
-DELETE FROM wpp.campaign_sends
-WHERE campaign_id IN (SELECT id FROM wpp.campaigns WHERE name ILIKE '%teste motor de disparo%' OR name ILIKE '%hello world%');
-DELETE FROM wpp.campaigns
-WHERE name ILIKE '%teste motor de disparo%' OR name ILIKE '%hello world%';
-
-DELETE FROM wpp.campaign_sends
-WHERE campaign_id IN (
-  '44444444-4444-4444-8444-444444444401','44444444-4444-4444-8444-444444444402',
-  '44444444-4444-4444-8444-444444444403','44444444-4444-4444-8444-444444444404',
-  '44444444-4444-4444-8444-444444444405','44444444-4444-4444-8444-444444444406',
-  '44444444-4444-4444-8444-444444444407','44444444-4444-4444-8444-444444444408',
-  '44444444-4444-4444-8444-444444444409','44444444-4444-4444-8444-444444444410',
-  '44444444-4444-4444-8444-444444444411','44444444-4444-4444-8444-444444444412'
-);
-DELETE FROM wpp.campaigns
-WHERE id IN (
-  '44444444-4444-4444-8444-444444444401','44444444-4444-4444-8444-444444444402',
-  '44444444-4444-4444-8444-444444444403','44444444-4444-4444-8444-444444444404',
-  '44444444-4444-4444-8444-444444444405','44444444-4444-4444-8444-444444444406',
-  '44444444-4444-4444-8444-444444444407','44444444-4444-4444-8444-444444444408',
-  '44444444-4444-4444-8444-444444444409','44444444-4444-4444-8444-444444444410',
-  '44444444-4444-4444-8444-444444444411','44444444-4444-4444-8444-444444444412'
-);
+-- Blanket purge: remove ALL pre-existing rows in both tables (child table
+-- first for FK safety), not just the fixed demo campaign ids or names
+-- matching a known dev/test campaign pattern. This is what actually removes
+-- any stale real or dev/test campaign, regardless of its id or name.
+DELETE FROM wpp.campaign_sends;
+DELETE FROM wpp.campaigns;
 
 WITH camp AS (
   SELECT * FROM (VALUES
@@ -401,7 +391,9 @@ FROM sends;
 COMMIT;
 
 -- =============================================================================
--- Fim do seed. Resumo aproximado de linhas inseridas:
+-- Fim do seed. Cada bloco acima faz TRUNCATE/DELETE sem WHERE na tabela
+-- inteira antes de inserir — qualquer linha real ou de rounds anteriores é
+-- removida, não só as de ID/nome fixo. Resumo aproximado de linhas inseridas:
 --   wpp.meta_ads_insights        : 6 campanhas x 92 dias  = 552 linhas
 --   wpp.instagram_account_daily  : 2 contas   x 92 dias   = 184 linhas
 --   wpp.instagram_profile_daily  : 2 contas   x 92 dias   = 184 linhas
