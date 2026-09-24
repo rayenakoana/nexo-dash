@@ -31,6 +31,142 @@
 
 BEGIN;
 
+-- -----------------------------------------------------------------------------
+-- 0) SCHEMA + TABELAS — só cria o que faltar
+-- -----------------------------------------------------------------------------
+-- Se o projeto Supabase de destino ainda não tem o schema "wpp" (ex.: um
+-- projeto novo criado só para a DEMO, sem o pipeline n8n original que
+-- normalmente alimenta essas tabelas), as instruções abaixo criam schema e
+-- tabelas com exatamente as colunas que o frontend consome (ver
+-- src/hooks/useMetaAdsInsights.ts, useInstagramInsights.ts,
+-- useEmailMarketing.ts, useWppCampanhasResumo.ts). Tudo IF NOT EXISTS: se o
+-- schema/tabelas já existirem (projeto original), este bloco não faz nada.
+--
+-- IMPORTANTE: depois de rodar este arquivo, se "wpp" for um schema NOVO,
+-- vá em Supabase Dashboard → Project Settings → API → Data API →
+-- "Exposed schemas" e adicione "wpp" na lista. Sem isso o PostgREST não
+-- serve o schema pro frontend mesmo com as tabelas e dados corretos.
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE SCHEMA IF NOT EXISTS wpp;
+
+CREATE TABLE IF NOT EXISTS wpp.meta_ads_insights (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id     uuid NOT NULL,
+  campaign_name   text NOT NULL,
+  date_start      date NOT NULL,
+  date_stop       date NOT NULL,
+  impressions     integer NOT NULL DEFAULT 0,
+  clicks          integer NOT NULL DEFAULT 0,
+  spend           numeric NOT NULL DEFAULT 0,
+  leads           integer NOT NULL DEFAULT 0,
+  purchases       integer NOT NULL DEFAULT 0,
+  purchase_value  numeric NOT NULL DEFAULT 0,
+  cpl             numeric NOT NULL DEFAULT 0,
+  roas            numeric NOT NULL DEFAULT 0,
+  reach           integer,
+  synced_at       timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS wpp.instagram_account_daily (
+  id                bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  account_id        text NOT NULL,
+  username          text NOT NULL,
+  date              date NOT NULL,
+  followers_count   integer NOT NULL DEFAULT 0,
+  media_count       integer NOT NULL DEFAULT 0,
+  followers_gained  integer NOT NULL DEFAULT 0,
+  followers_lost    integer NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS wpp.instagram_profile_daily (
+  id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  account_id      text NOT NULL,
+  username        text NOT NULL,
+  date            date NOT NULL,
+  profile_views   integer NOT NULL DEFAULT 0,
+  website_clicks  integer NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS wpp.instagram_post_insights (
+  id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  post_id         text NOT NULL,
+  account_id      text NOT NULL,
+  username        text NOT NULL,
+  posted_at       timestamptz NOT NULL,
+  media_type      text NOT NULL,
+  permalink       text,
+  caption         text,
+  like_count      integer NOT NULL DEFAULT 0,
+  comments_count  integer NOT NULL DEFAULT 0,
+  shares          integer NOT NULL DEFAULT 0,
+  saved           integer NOT NULL DEFAULT 0,
+  reach           integer NOT NULL DEFAULT 0,
+  impressions     integer NOT NULL DEFAULT 0,
+  views           integer NOT NULL DEFAULT 0,
+  synced_at       timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS wpp.email_campaigns (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                text NOT NULL,
+  type                text NOT NULL,
+  subject             text,
+  sent_at             timestamptz,
+  version             text NOT NULL DEFAULT 'v1',
+  ab_group_id         uuid,
+  recipients          integer NOT NULL DEFAULT 0,
+  delivered           integer NOT NULL DEFAULT 0,
+  delivery_rate       numeric NOT NULL DEFAULT 0,
+  open_rate           numeric NOT NULL DEFAULT 0,
+  click_rate          numeric NOT NULL DEFAULT 0,
+  bounce_rate         numeric NOT NULL DEFAULT 0,
+  spam_rate           numeric NOT NULL DEFAULT 0,
+  unsubscribe_rate    numeric NOT NULL DEFAULT 0,
+  engaged             integer NOT NULL DEFAULT 0,
+  disengaged          integer NOT NULL DEFAULT 0,
+  indeterminate       integer NOT NULL DEFAULT 0,
+  invalid             integer NOT NULL DEFAULT 0,
+  synced_at           timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS wpp.campaigns (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        text NOT NULL,
+  status      text NOT NULL DEFAULT 'completed',
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS wpp.campaign_sends (
+  id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  campaign_id   uuid NOT NULL REFERENCES wpp.campaigns(id) ON DELETE CASCADE,
+  status        text NOT NULL,
+  sent_at       timestamptz,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+-- RLS + policy de leitura anônima (a mesma anon key do frontend precisa ler
+-- essas tabelas). Se o projeto já tiver policies próprias, os comandos
+-- abaixo são no-ops seguros (DROP POLICY IF EXISTS antes de recriar).
+ALTER TABLE wpp.meta_ads_insights      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wpp.instagram_account_daily ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wpp.instagram_profile_daily ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wpp.instagram_post_insights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wpp.email_campaigns        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wpp.campaigns              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wpp.campaign_sends         ENABLE ROW LEVEL SECURITY;
+
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['meta_ads_insights','instagram_account_daily','instagram_profile_daily','instagram_post_insights','email_campaigns','campaigns','campaign_sends']
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS wpp_demo_read ON wpp.%I', t);
+    EXECUTE format('CREATE POLICY wpp_demo_read ON wpp.%I FOR SELECT TO anon, authenticated USING (true)', t);
+  END LOOP;
+END $$;
+
 SELECT setseed(0.4242);
 
 -- -----------------------------------------------------------------------------
