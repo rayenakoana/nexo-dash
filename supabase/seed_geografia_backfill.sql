@@ -17,6 +17,31 @@
 
 BEGIN;
 
+-- -----------------------------------------------------------------------------
+-- 0) Colunas que faltarem — defensivo
+-- -----------------------------------------------------------------------------
+-- leads_geografia é uma tabela gerenciada fora das migrations deste repo (só
+-- há um ALTER TABLE ADD COLUMN "deletado" em
+-- 20260804195350_soft_delete_leads_excluidos.sql). O projeto de destino pode
+-- ter uma versão da tabela sem alguma coluna que src/hooks/useLeadsGeografia.ts
+-- espera (ex.: "uf" ausente causou "column lg.uf does not exist" numa
+-- tentativa anterior). Isso cria a tabela do zero se ela nem existir, e cada
+-- ADD COLUMN IF NOT EXISTS é um no-op seguro se a coluna já existir.
+CREATE TABLE IF NOT EXISTS leads_geografia (
+  deal_id            text PRIMARY KEY,
+  created_at         timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS pipeline_id         text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS pais                text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS uf                  text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS estado              text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS regiao              text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS cidade              text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS estado_organizacao  text;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS rating              numeric;
+ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS deletado            boolean NOT NULL DEFAULT false;
+
 WITH pool AS (
   SELECT * FROM (VALUES
     ('SP', ARRAY['São Paulo','Campinas','Sorocaba','Ribeirão Preto','São José dos Campos','Americana']),
