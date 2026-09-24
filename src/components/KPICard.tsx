@@ -24,7 +24,7 @@ export function KPICard({ title, value, subtitle, icon: Icon, trend, accent = "r
         )}
       </div>
       <p className={cn(
-        "font-display font-bold tracking-tight text-[19px] leading-none",
+        "font-display font-bold tracking-tight text-[19px] leading-none tabular-nums",
         isGold ? "text-gradient-gold" : "text-foreground"
       )}>
         {value}

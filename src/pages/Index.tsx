@@ -59,14 +59,15 @@ function getDateRange(period: string, customStart: string, customEnd: string) {
   return { start: customStart || "2000-01-01", end: customEnd || "2099-12-31" };
 }
 
-const tooltipStyle = { background: "#111", border: "1px solid hsl(0 0% 12%)", borderRadius: "8px", fontSize: 12 };
+const tooltipStyle = { background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 12, color: "hsl(var(--popover-foreground))" };
+const tooltipWrapperStyle = { transition: "transform 120ms ease-out, opacity 120ms ease-out" };
 
 function PieTooltip({ active, payload }: any) {
   if (!active || !payload || !payload.length) return null;
   const { name, value } = payload[0];
   return (
     <div style={{ ...tooltipStyle, padding: "8px 12px", whiteSpace: "nowrap" }}>
-      <div style={{ color: "#fff", fontWeight: 600 }}>{name}</div>
+      <div style={{ color: "hsl(var(--popover-foreground))", fontWeight: 600 }}>{name}</div>
       <div style={{ color: "#ccc" }}>{value} leads</div>
     </div>
   );
@@ -85,6 +86,7 @@ function ChartSkeleton({ height = 280 }: { height?: number }) {
 }
 
 export default function Index() {
+  const [receitaHoverIndex, setReceitaHoverIndex] = useState<number | null>(null);
   const { data: vendas = [], isLoading: loadingVendas } = useVendas();
   const { data: custos = [], isLoading: loadingCustos } = useCustosMarketing();
   const { data: reunioes = [], isLoading: loadingReunioes } = usePerformanceReunioes();
@@ -657,11 +659,27 @@ export default function Index() {
         </div>
         {isLoading ? <ChartSkeleton /> : receitaDiariaData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={receitaDiariaData}>
+            <BarChart data={receitaDiariaData} onMouseLeave={() => setReceitaHoverIndex(null)}>
               <XAxis dataKey="data" tick={{ fill: "#666", fontSize: 11 }} />
               <YAxis tick={{ fill: "#666", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
-              <Bar dataKey="valor" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Faturamento" />
+              <Tooltip wrapperStyle={tooltipWrapperStyle} contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
+              <Bar
+                dataKey="valor"
+                fill="#3B82F6"
+                radius={[4, 4, 0, 0]}
+                name="Faturamento"
+                isAnimationActive
+                animationDuration={1100}
+                animationEasing="ease-out"
+                onMouseEnter={(_, idx) => setReceitaHoverIndex(idx)}
+              >
+                {receitaDiariaData.map((_: any, idx: number) => (
+                  <Cell
+                    key={idx}
+                    fillOpacity={receitaHoverIndex === null || receitaHoverIndex === idx ? 1 : 0.45}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -705,12 +723,15 @@ export default function Index() {
               </defs>
               <XAxis dataKey="data" tick={{ fill: "#666", fontSize: 11 }} />
               <YAxis tick={{ fill: "#666", fontSize: 11 }} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip wrapperStyle={tooltipWrapperStyle} contentStyle={tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Area type="monotone" dataKey="Leads Qualificados" stroke="#3B82F6" strokeWidth={2.5}
-                fill="url(#gradQualificados)" dot={false} activeDot={{ r: 4 }} />
-              <Line type="monotone" dataKey="Reuniões Agendadas" stroke="#22D3EE" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Compareceram" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3 }} />
+                fill="url(#gradQualificados)" dot={false} activeDot={{ r: 4 }}
+                isAnimationActive animationDuration={1100} animationEasing="ease-out" />
+              <Line type="monotone" dataKey="Reuniões Agendadas" stroke="#22D3EE" strokeWidth={2} dot={{ r: 3 }}
+                isAnimationActive animationDuration={1100} animationEasing="ease-out" />
+              <Line type="monotone" dataKey="Compareceram" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3 }}
+                isAnimationActive animationDuration={1100} animationEasing="ease-out" />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
@@ -830,8 +851,9 @@ export default function Index() {
                 </defs>
                 <XAxis type="number" tick={{ fill: "#666", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                 <YAxis dataKey="name" type="category" tick={{ fill: "#999", fontSize: 11 }} width={100} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
-                <Bar dataKey="value" fill="url(#gradBarSegmento)" radius={[0, 6, 6, 0]} barSize={20} />
+                <Tooltip wrapperStyle={tooltipWrapperStyle} contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
+                <Bar dataKey="value" fill="url(#gradBarSegmento)" radius={[0, 6, 6, 0]} barSize={20}
+                  isAnimationActive animationDuration={1000} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -846,8 +868,9 @@ export default function Index() {
               <BarChart data={produtoData} layout="vertical" margin={{ left: 20 }}>
                 <XAxis type="number" tick={{ fill: "#666", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                 <YAxis dataKey="name" type="category" tick={{ fill: "#999", fontSize: 11 }} width={100} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
-                <Bar dataKey="value" fill="#3B82F6" radius={[0, 6, 6, 0]} barSize={20} />
+                <Tooltip wrapperStyle={tooltipWrapperStyle} contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
+                <Bar dataKey="value" fill="#3B82F6" radius={[0, 6, 6, 0]} barSize={20}
+                  isAnimationActive animationDuration={1000} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -865,9 +888,11 @@ export default function Index() {
             <BarChart data={showUpData}>
               <XAxis dataKey="data" tick={{ fill: "#666", fontSize: 11 }} />
               <YAxis tick={{ fill: "#666", fontSize: 11 }} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="Confirmado" fill="#475569" radius={[4, 4, 0, 0]} name="Confirmados SDR" />
-              <Bar dataKey="Real" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Compareceram" />
+              <Tooltip wrapperStyle={tooltipWrapperStyle} contentStyle={tooltipStyle} />
+              <Bar dataKey="Confirmado" fill="#475569" radius={[4, 4, 0, 0]} name="Confirmados SDR"
+                isAnimationActive animationDuration={1000} animationEasing="ease-out" />
+              <Bar dataKey="Real" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Compareceram"
+                isAnimationActive animationDuration={1000} animationEasing="ease-out" />
             </BarChart>
           </ResponsiveContainer>
         ) : (

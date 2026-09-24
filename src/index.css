@@ -47,28 +47,38 @@
     --success: 142 71% 45%;         /* green — positive / above target */
     --warning: 38 92% 50%;          /* amber — attention / near target */
     --danger: 0 84% 60%;            /* red — negative / below target (semantic only) */
+
+    /* Elevation: on dark surfaces a literal light-mode drop shadow is invisible,
+       so dark mode uses a low-opacity glow + a slightly deeper black shadow instead. */
+    --shadow-card: 0 1px 2px 0 hsl(213 94% 55% / 0.04), 0 6px 20px -6px hsl(222 60% 2% / 0.55);
+    --shadow-card-hover: 0 1px 3px 0 hsl(213 94% 55% / 0.08), 0 10px 28px -8px hsl(222 60% 2% / 0.6);
   }
   html.light {
-    --background: 210 40% 96%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
+    /* Corporate SaaS neutral: softened slate neutrals, #F8FAFC canvas / #FFFFFF cards / #0F172A text */
+    --background: 210 40% 98%;      /* #F8FAFC */
+    --foreground: 222 47% 11%;      /* #0F172A */
+    --card: 0 0% 100%;              /* #FFFFFF */
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     --primary: 213 94% 48%;
     --primary-foreground: 0 0% 100%;
     --primary-dark: 213 90% 32%;
-    --secondary: 210 40% 92%;
+    --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 92%;
-    --muted-foreground: 215 20% 45%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
     --accent: 213 94% 48%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 74% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 88%;
-    --input: 214 32% 88%;
+    --border: 217 24% 91%;          /* ultra-thin, barely-visible structural border */
+    --input: 217 24% 91%;
     --ring: 213 94% 48%;
+
+    /* Soft two-layer elevation for premium/executive read */
+    --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.05);
+    --shadow-card-hover: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 6px -2px rgb(15 23 42 / 0.06);
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 20%;
     --sidebar-primary: 213 94% 48%;
@@ -112,12 +122,12 @@
 }
 
 @layer components {
-  .glass-card { @apply rounded-xl border backdrop-blur-xl relative; background: hsl(var(--card) / 0.55); border-color: hsl(var(--border)); }
+  .glass-card { @apply rounded-xl border backdrop-blur-xl relative; background: hsl(var(--card) / 0.55); border-color: hsl(var(--border)); box-shadow: var(--shadow-card); }
   .glass-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, hsl(0 0% 100% / 0.04), transparent 40%); }
-  html.light .glass-card { background: hsl(var(--card) / 0.7); }
+  html.light .glass-card { background: hsl(var(--card) / 0.92); }
   html.light .glass-card::before { background: linear-gradient(180deg, hsl(0 0% 100% / 0.5), transparent 50%); }
-  .glass-card-hover { @apply glass-card transition-all duration-300; }
-  .glass-card-hover:hover { border-color: hsl(213 94% 55% / 0.35); box-shadow: 0 0 24px hsl(213 94% 55% / 0.07); }
+  .glass-card-hover { @apply glass-card transition-all duration-200 ease-out; will-change: transform; }
+  .glass-card-hover:hover { transform: translateY(-2px); border-color: hsl(213 94% 55% / 0.35); box-shadow: var(--shadow-card-hover), 0 0 24px hsl(213 94% 55% / 0.07); }
   .fchip { @apply text-xs px-3 py-1.5 rounded-full border transition-colors cursor-pointer backdrop-blur-xl; background: hsl(var(--card) / 0.7); border-color: hsl(var(--border)); color: hsl(var(--muted-foreground)); }
   .fchip:hover { border-color: hsl(213 94% 55% / 0.4); }
   .fchip.active { background: linear-gradient(135deg, hsl(213 90% 35%), hsl(213 94% 48%)); color: #fff; border-color: transparent; }

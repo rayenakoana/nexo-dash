@@ -31,6 +31,7 @@ const TT = {
   labelStyle: { color: "hsl(0 0% 96%)", fontWeight: 600, marginBottom: 2 },
   itemStyle:  { color: "hsl(0 0% 80%)" },
   cursor:     { fill: "hsl(0 0% 100% / 0.03)" },
+  wrapperStyle: { transition: "transform 120ms ease-out, opacity 120ms ease-out" },
 };
 
 const P     = "hsl(213 94% 55%)";
