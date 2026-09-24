@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 44" fill="none">
+  <rect width="36" height="36" x="4" y="4" rx="9" fill="#3B82F6"/>
+  <path d="M11 33 L11 11 L17.5 11 L24.5 24 L24.5 11 L31 11 L31 33 L24.5 33 L17.5 20 L17.5 33 Z" fill="white"/>
+  <text x="48" y="30" font-family="Barlow Condensed,sans-serif" font-weight="700" font-size="22" fill="white" letter-spacing="1">NEXO DASH</text>
+</svg>

@@ -57,7 +57,7 @@ export function TopNav() {
               <span className="text-foreground"> DASH</span>
             </div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
-              Costurando Sucesso
+              Nexo Dash
             </div>
           </div>
         </NavLink>

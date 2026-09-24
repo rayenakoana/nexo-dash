@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 const publicItems = [
   { title: "Dashboard",       url: "/",            icon: BarChart3,   end: true },
   { title: "Mapa Geográfico", url: "/mapa",        icon: Map },
-  { title: "CS Live",         url: "/live",        icon: Radio },
+  { title: "Nexo Live",         url: "/live",        icon: Radio },
   { title: "Funil XPTO",      url: "/funil-xpto",  icon: GitMerge },
   { title: "Marketing",        url: "/marketing",    icon: TrendingUp },
 ];
@@ -66,8 +66,8 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center px-4 py-4 border-b border-border">
         <img
-          src="/logo-cs.png"
-          alt="Costurando Sucesso"
+          src="/logo-nexo.svg"
+          alt="Nexo Dash"
           className="h-10 w-auto object-contain logo-adaptive"
         />
       </div>
