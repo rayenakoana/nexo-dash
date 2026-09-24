@@ -5,10 +5,28 @@
 -- fazendo a tela de Mapa Geográfico (src/pages/MapaGeografico.tsx) mostrar
 -- "Cidade não informada" como a entrada dominante ao abrir um estado.
 --
+-- Esquema REAL confirmado via information_schema.columns neste projeto
+-- (diferente da interface TS em src/hooks/useLeadsGeografia.ts, que é mais
+-- ampla — provavelmente reflete outro ambiente/versão futura da tabela):
+--   id (text, chave), rating (integer), pipeline_id (text), deletado (boolean),
+--   pais (text), estado (text), cidade (text), created_at (timestamptz).
+-- Não existem `deal_id`, `uf`, `regiao`, `estado_organizacao` nesta tabela —
+-- tentativas anteriores deste arquivo assumiram esses nomes e quebraram
+-- ("column lg.uf does not exist", depois "column lg.deal_id does not exist").
+-- O componente MapaGeografico.tsx agrupa por `estado` (não por `uf`), então
+-- é essa coluna que precisa casar com o pool de cidades abaixo.
+--
+-- `estado` pode estar armazenado como nome completo ("Minas Gerais") ou como
+-- sigla ("MG") dependendo de como o seed comercial/funil (já existente e não
+-- mexido por esta tarefa) populou os leads — não temos certeza de qual. Por
+-- isso o pool cobre AMBOS os formatos por estado, casando de forma
+-- case-insensitive e sem acentuação (unaccent) para não depender de
+-- maiúsculas/minúsculas ou grafia exata.
+--
 -- Esta correção é só de PREENCHIMENTO DE ATRIBUTO: nenhuma linha é criada,
--- apagada, ou tem `pais`/`estado`/`uf`/`pipeline_id`/`rating` alterados — só a
--- coluna `cidade` é preenchida quando está nula/vazia, escolhendo uma cidade
--- plausível para o `uf` da linha, de forma DETERMINÍSTICA (hash do deal_id),
+-- apagada, ou tem `pais`/`estado`/`pipeline_id`/`rating` alterados — só a
+-- coluna `cidade` é preenchida quando está nula/vazia/"Cidade não informada",
+-- escolhendo uma cidade plausível de forma DETERMINÍSTICA (hash do `id`),
 -- então idempotente: rodar de novo não muda o resultado.
 --
 -- Roda depois de seed_marketing_demo.sql (schema diferente, sem dependência
@@ -17,75 +35,64 @@
 
 BEGIN;
 
--- -----------------------------------------------------------------------------
--- 0) Colunas que faltarem — defensivo
--- -----------------------------------------------------------------------------
--- leads_geografia é uma tabela gerenciada fora das migrations deste repo (só
--- há um ALTER TABLE ADD COLUMN "deletado" em
--- 20260804195350_soft_delete_leads_excluidos.sql). O projeto de destino pode
--- ter uma versão da tabela sem alguma coluna que src/hooks/useLeadsGeografia.ts
--- espera (ex.: "uf" ausente causou "column lg.uf does not exist" numa
--- tentativa anterior). Isso cria a tabela do zero se ela nem existir, e cada
--- ADD COLUMN IF NOT EXISTS é um no-op seguro se a coluna já existir.
-CREATE TABLE IF NOT EXISTS leads_geografia (
-  deal_id            text PRIMARY KEY,
-  created_at         timestamptz NOT NULL DEFAULT now()
-);
+CREATE EXTENSION IF NOT EXISTS unaccent;
 
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS pipeline_id         text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS pais                text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS uf                  text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS estado              text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS regiao              text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS cidade              text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS estado_organizacao  text;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS rating              numeric;
-ALTER TABLE leads_geografia ADD COLUMN IF NOT EXISTS deletado            boolean NOT NULL DEFAULT false;
-
-WITH pool AS (
+WITH estados AS (
   SELECT * FROM (VALUES
-    ('SP', ARRAY['São Paulo','Campinas','Sorocaba','Ribeirão Preto','São José dos Campos','Americana']),
-    ('MG', ARRAY['Belo Horizonte','Uberlândia','Juiz de Fora','Contagem','Divinópolis','Uberaba']),
-    ('SC', ARRAY['Blumenau','Brusque','Jaraguá do Sul','Joinville','Florianópolis']),
-    ('PR', ARRAY['Curitiba','Londrina','Maringá','Cascavel']),
-    ('GO', ARRAY['Goiânia','Anápolis']),
-    ('RJ', ARRAY['Rio de Janeiro','Nova Friburgo','Petrópolis']),
-    ('RS', ARRAY['Porto Alegre','Caxias do Sul']),
-    ('BA', ARRAY['Salvador','Feira de Santana','Vitória da Conquista']),
-    ('PE', ARRAY['Recife','Caruaru','Petrolina']),
-    ('CE', ARRAY['Fortaleza','Juazeiro do Norte','Sobral']),
-    ('ES', ARRAY['Vitória','Vila Velha','Serra']),
-    ('DF', ARRAY['Brasília']),
-    ('MT', ARRAY['Cuiabá','Várzea Grande','Rondonópolis','Sinop','Sorriso']),
-    ('MS', ARRAY['Campo Grande','Dourados']),
-    ('PA', ARRAY['Belém','Ananindeua']),
-    ('AM', ARRAY['Manaus']),
-    ('PB', ARRAY['João Pessoa','Campina Grande']),
-    ('RN', ARRAY['Natal','Mossoró']),
-    ('AL', ARRAY['Maceió']),
-    ('SE', ARRAY['Aracaju']),
-    ('PI', ARRAY['Teresina']),
-    ('MA', ARRAY['São Luís']),
-    ('TO', ARRAY['Palmas']),
-    ('RO', ARRAY['Porto Velho']),
-    ('AC', ARRAY['Rio Branco']),
-    ('AP', ARRAY['Macapá']),
-    ('RR', ARRAY['Boa Vista'])
-  ) AS t(uf, cidades)
+    ('SP', 'São Paulo',           ARRAY['São Paulo','Campinas','Sorocaba','Ribeirão Preto','São José dos Campos','Americana']),
+    ('MG', 'Minas Gerais',        ARRAY['Belo Horizonte','Uberlândia','Juiz de Fora','Contagem','Divinópolis','Uberaba']),
+    ('SC', 'Santa Catarina',      ARRAY['Blumenau','Brusque','Jaraguá do Sul','Joinville','Florianópolis']),
+    ('PR', 'Paraná',              ARRAY['Curitiba','Londrina','Maringá','Cascavel']),
+    ('GO', 'Goiás',               ARRAY['Goiânia','Anápolis']),
+    ('RJ', 'Rio de Janeiro',      ARRAY['Rio de Janeiro','Nova Friburgo','Petrópolis']),
+    ('RS', 'Rio Grande do Sul',   ARRAY['Porto Alegre','Caxias do Sul']),
+    ('BA', 'Bahia',               ARRAY['Salvador','Feira de Santana','Vitória da Conquista']),
+    ('PE', 'Pernambuco',          ARRAY['Recife','Caruaru','Petrolina']),
+    ('CE', 'Ceará',               ARRAY['Fortaleza','Juazeiro do Norte','Sobral']),
+    ('ES', 'Espírito Santo',      ARRAY['Vitória','Vila Velha','Serra']),
+    ('DF', 'Distrito Federal',    ARRAY['Brasília']),
+    ('MT', 'Mato Grosso',         ARRAY['Cuiabá','Várzea Grande','Rondonópolis','Sinop','Sorriso']),
+    ('MS', 'Mato Grosso do Sul',  ARRAY['Campo Grande','Dourados']),
+    ('PA', 'Pará',                ARRAY['Belém','Ananindeua']),
+    ('AM', 'Amazonas',            ARRAY['Manaus']),
+    ('PB', 'Paraíba',             ARRAY['João Pessoa','Campina Grande']),
+    ('RN', 'Rio Grande do Norte', ARRAY['Natal','Mossoró']),
+    ('AL', 'Alagoas',             ARRAY['Maceió']),
+    ('SE', 'Sergipe',             ARRAY['Aracaju']),
+    ('PI', 'Piauí',               ARRAY['Teresina']),
+    ('MA', 'Maranhão',            ARRAY['São Luís']),
+    ('TO', 'Tocantins',           ARRAY['Palmas']),
+    ('RO', 'Rondônia',            ARRAY['Porto Velho']),
+    ('AC', 'Acre',                ARRAY['Rio Branco']),
+    ('AP', 'Amapá',               ARRAY['Macapá']),
+    ('RR', 'Roraima',             ARRAY['Boa Vista'])
+  ) AS t(uf, nome, cidades)
+),
+-- Cada estado gera duas chaves de casamento possíveis (sigla e nome
+-- completo), normalizadas (minúsculo, sem acento, sem espaço nas pontas),
+-- ambas apontando para a mesma lista de cidades.
+pool AS (
+  SELECT unaccent(lower(btrim(uf)))   AS chave, cidades FROM estados
+  UNION ALL
+  SELECT unaccent(lower(btrim(nome))) AS chave, cidades FROM estados
 )
--- Match uf case/whitespace-insensitively: a prior run of this backfill left
--- Mato Grosso (and possibly other states) unfixed because the real `uf`
--- column value did not exactly equality-match the pool's uppercase 2-letter
--- code (e.g. trailing whitespace, or lowercase). upper(btrim(...)) makes the
--- match robust to both without assuming a specific stored format.
 UPDATE leads_geografia lg
-SET cidade = pool.cidades[1 + (abs(hashtext(lg.deal_id::text)) % array_length(pool.cidades, 1))]
+SET cidade = pool.cidades[1 + (abs(hashtext(lg.id::text)) % array_length(pool.cidades, 1))]
 FROM pool
-WHERE pool.uf = upper(btrim(lg.uf))
+WHERE pool.chave = unaccent(lower(btrim(lg.estado)))
   AND (lg.cidade IS NULL OR btrim(lg.cidade) = '' OR lg.cidade ILIKE 'cidade não informada' OR lg.cidade ILIKE 'nao informad%');
 
 COMMIT;
 
--- Linhas cujo `uf` não está na lista acima (fora do Brasil, ou uf nula) ficam
--- sem cidade preenchida de propósito — é o "pequeno percentual residual sem
--- cidade" esperado, e não deve dominar mais nenhum estado listado acima.
+-- Linhas cujo `estado` não bate com nenhuma sigla/nome acima (fora do
+-- Brasil, ou estado nulo/grafado de forma muito diferente) ficam sem cidade
+-- preenchida de propósito — é o "pequeno percentual residual sem cidade"
+-- esperado, e não deve dominar mais nenhum estado listado acima.
+--
+-- Diagnóstico pós-execução: rode a query abaixo para conferir se sobrou
+-- algum estado com `cidade` ainda vazia em volume relevante — se sobrar,
+-- provavelmente é uma grafia de `estado` fora do pool acima (ex. "Sao Paulo"
+-- sem acento já é coberto pelo unaccent, mas um erro de digitação não seria).
+--
+-- SELECT estado, count(*) FILTER (WHERE cidade IS NULL OR btrim(cidade) = '') AS sem_cidade, count(*) AS total
+-- FROM leads_geografia WHERE pais = 'Brasil' GROUP BY estado ORDER BY sem_cidade DESC;
