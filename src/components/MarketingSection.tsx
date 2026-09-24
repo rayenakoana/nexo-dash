@@ -52,8 +52,8 @@ function SubTitle({ children }: { children: React.ReactNode }) {
 }
 
 const ACCOUNT_LABEL: Record<string, string> = {
-  eduardocristianoriginal: "@eduardocristianoriginal",
-  costurandosucesso: "@costurandosucesso",
+  modaprimeoficial: "@modaprimeoficial",
+  studioconfeccao: "@studioconfeccao",
 };
 
 type SortKey = "eng" | "like_count" | "comments_count" | "shares" | "saved" | "reach" | "views" | "taxaEng" | "posted_at";
@@ -717,14 +717,14 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Conta:</span>
             <div className="flex gap-1 p-0.5 rounded-lg border border-border bg-card/40">
-              {([null, "eduardocristianoriginal", "costurandosucesso"] as (string|null)[]).map(acc => (
+              {([null, "modaprimeoficial", "studioconfeccao"] as (string|null)[]).map(acc => (
                 <button key={acc??"todas"} onClick={() => setIgAccount(acc)}
                   className={cn("px-3 py-1 rounded-md text-xs font-semibold transition-all",
                     igAccount===acc
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   )}>
-                  {acc===null?"Todas":acc==="eduardocristianoriginal"?"@EC":"@CS"}
+                  {acc===null?"Todas":acc==="modaprimeoficial"?"@EC":"@CS"}
                 </button>
               ))}
             </div>
@@ -733,14 +733,14 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
           {/* KPIs */}
           {!igAccount ? (() => {
             // ── modo TODAS: total + EC + CS + Posts em grid 4 colunas
-            const fEC = followersByAccount["eduardocristianoriginal"];
-            const fCS = followersByAccount["costurandosucesso"];
+            const fEC = followersByAccount["modaprimeoficial"];
+            const fCS = followersByAccount["studioconfeccao"];
             const totalSeg = (fEC?.last ?? 0) + (fCS?.last ?? 0);
             const totalDelta = ((fEC ? fEC.last - fEC.first : 0) + (fCS ? fCS.last - fCS.first : 0));
-            const gainedEC = dailyData.filter(d => d.username==="eduardocristianoriginal").reduce((s,d)=>s+(d.followers_gained||0),0);
-            const lostEC   = dailyData.filter(d => d.username==="eduardocristianoriginal").reduce((s,d)=>s+(d.followers_lost||0),0);
-            const gainedCS = dailyData.filter(d => d.username==="costurandosucesso").reduce((s,d)=>s+(d.followers_gained||0),0);
-            const lostCS   = dailyData.filter(d => d.username==="costurandosucesso").reduce((s,d)=>s+(d.followers_lost||0),0);
+            const gainedEC = dailyData.filter(d => d.username==="modaprimeoficial").reduce((s,d)=>s+(d.followers_gained||0),0);
+            const lostEC   = dailyData.filter(d => d.username==="modaprimeoficial").reduce((s,d)=>s+(d.followers_lost||0),0);
+            const gainedCS = dailyData.filter(d => d.username==="studioconfeccao").reduce((s,d)=>s+(d.followers_gained||0),0);
+            const lostCS   = dailyData.filter(d => d.username==="studioconfeccao").reduce((s,d)=>s+(d.followers_lost||0),0);
             return (
               <>
                 {/* linha 1: total + posts + eng + taxa */}
@@ -777,7 +777,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
             const delta = f ? f.last - f.first : 0;
             const gained = dailyFiltered.filter(d => d.username===igAccount).reduce((s,d)=>s+(d.followers_gained||0),0);
             const lost   = dailyFiltered.filter(d => d.username===igAccount).reduce((s,d)=>s+(d.followers_lost||0),0);
-            const label  = igAccount==="eduardocristianoriginal" ? "@EC" : "@CS";
+            const label  = igAccount==="modaprimeoficial" ? "@EC" : "@CS";
             return (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -865,7 +865,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                       return (
                         <div key={acc} className="rounded-lg p-3 bg-muted/10 border border-border/30">
                           <p className="text-[10px] font-semibold text-primary mb-2">
-                            {acc==="eduardocristianoriginal"?"@EC":"@CS"}
+                            {acc==="modaprimeoficial"?"@EC":"@CS"}
                           </p>
                           <div className="space-y-1">
                             <div className="flex justify-between text-[10px]">
@@ -903,7 +903,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                       return (
                         <div key={acc} className="rounded-lg p-3 bg-muted/10 border border-border/30">
                           <p className="text-[10px] font-semibold text-primary mb-1">
-                            {acc==="eduardocristianoriginal"?"@EC":"@CS"}
+                            {acc==="modaprimeoficial"?"@EC":"@CS"}
                           </p>
                           <div className="space-y-1">
                             <div className="flex justify-between text-[10px]">
@@ -1053,7 +1053,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     {visibleAccounts.map((acc,i) => (
                       <Area key={`${acc}_views`} type="monotone"
                         dataKey={`${acc}_views`}
-                        name={`${acc==="eduardocristianoriginal"?"EC":"CS"} — visitas`}
+                        name={`${acc==="modaprimeoficial"?"EC":"CS"} — visitas`}
                         stroke={i===0?P:P2} strokeWidth={2}
                         fill={i===0?"url(#gradViews)":"url(#gradClicks)"} dot={false}/>
                     ))}
@@ -1213,7 +1213,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                       <tr key={p.post_id} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
                         <td className="py-2 pr-3">
                           <span className="text-[10px] font-semibold text-primary">
-                            {p.username==="eduardocristianoriginal"?"@EC":"@CS"}
+                            {p.username==="modaprimeoficial"?"@EC":"@CS"}
                           </span>
                         </td>
                         <td className="py-2 pr-3 font-mono text-[10px] text-muted-foreground">
@@ -1412,7 +1412,7 @@ function InstagramAlertas({
   const dadosCrescimento = useMemo(() => {
     return Object.entries(followersByAccountFull).map(([acc, f]) => {
       const fc     = forecast?.[acc];
-      const label  = acc==="eduardocristianoriginal" ? "@EC" : "@CS";
+      const label  = acc==="modaprimeoficial" ? "@EC" : "@CS";
       const delta  = f.last - f.first;
       const perDay = fc?.per_day ?? 0;
       const proj30 = fc?.next_30 ?? f.last;
@@ -1556,7 +1556,7 @@ function ImpactoConteudo({ postsData, dailyData, igAccount }: ImpactoConteudoPro
       });
       const saldo  = gained - lost;
       const tipo   = tipoLabel(p.media_type);
-      const conta  = p.username==="eduardocristianoriginal"?"@EC":"@CS";
+      const conta  = p.username==="modaprimeoficial"?"@EC":"@CS";
       const caption= (p.caption||"").slice(0,50)+(p.caption?.length>50?"…":"");
       const eng    = p.like_count+p.comments_count+p.shares+p.saved;
       const taxaEng= p.reach>0?parseFloat((eng/p.reach*100).toFixed(1)):0;
@@ -1871,8 +1871,8 @@ function InstagramInsightsAI({
   const [generated, setGenerated] = useState(false);
 
   const buildPrompt = () => {
-    const conta = igAccount === "eduardocristianoriginal" ? "@eduardocristianoriginal"
-      : igAccount === "costurandosucesso" ? "@costurandosucesso"
+    const conta = igAccount === "modaprimeoficial" ? "@modaprimeoficial"
+      : igAccount === "studioconfeccao" ? "@studioconfeccao"
       : "todas as contas combinadas";
 
     const topPost = [...postsFiltered]
@@ -1889,7 +1889,7 @@ function InstagramInsightsAI({
       const delta = f.last - f.first;
       const gained = dailyFiltered.filter(d=>d.username===acc).reduce((s,d)=>s+(d.followers_gained||0),0);
       const lost   = dailyFiltered.filter(d=>d.username===acc).reduce((s,d)=>s+(d.followers_lost||0),0);
-      return `${acc==="eduardocristianoriginal"?"@EC":"@CS"}: ${f.last.toLocaleString("pt-BR")} seguidores, delta ${delta>=0?"+":""}${delta} no período, +${gained} novos, -${lost} saídas${forecast?`, tendência ${forecast.per_day>=0?"+":""}${forecast.per_day}/dia, previsão ${forecast.next_30.toLocaleString("pt-BR")} em 30 dias`:""}`;
+      return `${acc==="modaprimeoficial"?"@EC":"@CS"}: ${f.last.toLocaleString("pt-BR")} seguidores, delta ${delta>=0?"+":""}${delta} no período, +${gained} novos, -${lost} saídas${forecast?`, tendência ${forecast.per_day>=0?"+":""}${forecast.per_day}/dia, previsão ${forecast.next_30.toLocaleString("pt-BR")} em 30 dias`:""}`;
     }).join("\n");
 
     const excelente = erBenchmark.find(f=>f.faixa.includes("Excelente"))?.posts ?? 0;

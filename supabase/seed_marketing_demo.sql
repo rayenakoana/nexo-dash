@@ -106,8 +106,8 @@ FROM step5;
 -- (src/components/MarketingSection.tsx: ACCOUNT_LABEL, filtro de conta), por
 -- isso são reaproveitados tal como estão no código-fonte para que o filtro de
 -- conta e os KPIs "@EC" / "@CS" funcionem sem alterar a UI.
---   eduardocristianoriginal → perfil pessoal (menor base, crescimento moderado)
---   costurandosucesso       → perfil institucional (base maior, crescimento mais forte)
+--   modaprimeoficial → perfil pessoal (menor base, crescimento moderado)
+--   studioconfeccao       → perfil institucional (base maior, crescimento mais forte)
 
 DELETE FROM wpp.instagram_account_daily
 WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
@@ -118,8 +118,8 @@ WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333
 
 WITH accounts AS (
   SELECT * FROM (VALUES
-    ('33333333-3333-4333-8333-333333333301'::uuid, 'eduardocristianoriginal', 18400::numeric, 120::numeric, 40::numeric, 18::numeric, 14::numeric, 8::numeric),
-    ('33333333-3333-4333-8333-333333333302'::uuid, 'costurandosucesso',       26800::numeric, 340::numeric, 68::numeric, 26::numeric, 22::numeric, 12::numeric)
+    ('33333333-3333-4333-8333-333333333301'::uuid, 'modaprimeoficial', 18400::numeric, 120::numeric, 40::numeric, 18::numeric, 14::numeric, 8::numeric),
+    ('33333333-3333-4333-8333-333333333302'::uuid, 'studioconfeccao',       26800::numeric, 340::numeric, 68::numeric, 26::numeric, 22::numeric, 12::numeric)
   ) AS t(account_id, username, start_followers, start_media, avg_gain, gain_var, avg_loss, loss_var)
 ),
 days AS (
@@ -153,8 +153,8 @@ WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333
 
 WITH accounts AS (
   SELECT * FROM (VALUES
-    ('33333333-3333-4333-8333-333333333301'::uuid, 'eduardocristianoriginal', 21000::numeric),
-    ('33333333-3333-4333-8333-333333333302'::uuid, 'costurandosucesso',       32000::numeric)
+    ('33333333-3333-4333-8333-333333333301'::uuid, 'modaprimeoficial', 21000::numeric),
+    ('33333333-3333-4333-8333-333333333302'::uuid, 'studioconfeccao',       32000::numeric)
   ) AS t(account_id, username, base_reach)
 ),
 posts AS (
