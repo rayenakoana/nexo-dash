@@ -415,7 +415,7 @@ function BrazilMap({ porEstado, onClickEstado, onHover }: { porEstado: Record<st
               <path
                 key={i}
                 d={path(d) || ""}
-                fill={leads > 0 ? `hsl(355 82% 51% / ${intensity})` : "hsl(var(--muted) / 0.4)"}
+                fill={leads > 0 ? `hsl(213 94% 55% / ${intensity})` : "hsl(var(--muted) / 0.4)"}
                 stroke="hsl(var(--border))"
                 strokeWidth={0.6 / transform.scale}
                 className={leads > 0 ? "cursor-pointer transition-opacity hover:opacity-80" : ""}

@@ -16,6 +16,7 @@ import {
   Cell, Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { gerarAnaliseSimuladaEmail } from "@/lib/simulatedAnalysis";
 
 // ── Visuais ───────────────────────────────────────────────────────────────────
 
@@ -30,9 +31,10 @@ const TT = {
   labelStyle: { color: "hsl(0 0% 96%)", fontWeight: 600, marginBottom: 2 },
   itemStyle:  { color: "hsl(0 0% 80%)" },
   cursor:     { fill: "hsl(0 0% 100% / 0.03)" },
+  wrapperStyle: { transition: "transform 120ms ease-out, opacity 120ms ease-out" },
 };
 
-const P     = "hsl(355 82% 51%)";
+const P     = "hsl(213 94% 55%)";
 const GOLD  = "hsl(43 96% 56%)";
 const GREEN = "hsl(142 71% 45%)";
 const MUTED = "hsl(0 0% 50%)";
@@ -40,7 +42,7 @@ const MUTED = "hsl(0 0% 50%)";
 const pct  = (n: number) => n.toFixed(1) + "%";
 const fmt  = (n: number) => n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(Math.round(n));
 
-// Benchmark do setor — educação/confecção B2B Brasil
+// Benchmark do setor — educação/consultoria de growth B2B Brasil
 const BENCHMARK = {
   open_rate:        { good: 30, warn: 20,  label: "Abertura",     ref: "Setor B2B Educação" },
   click_rate:       { good: 3,  warn: 1.5, label: "Clique",       ref: "Setor B2B Educação" },
@@ -159,6 +161,7 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
   } | null>(null);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
+  const [simulado, setSimulado]   = useState(false);
   const [subjectInput, setSubjectInput] = useState("");
   const [showInput, setShowInput] = useState(false);
 
@@ -166,6 +169,7 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
     setLoading(true);
     setError("");
     setResult(null);
+    setSimulado(false);
     try {
       // Assunto: preferir override manual > campo do banco > null
       const subject = subjectOverride ?? campaign.subject ?? "";
@@ -199,8 +203,8 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
         : '"insight_assunto": null,';
 
       const prompt = [
-        "Você é especialista em email marketing para educação empresarial voltada a confecções no Brasil.",
-        "Empresa: Costurando Sucesso (CS) — cursos, mentorias e consultorias para gestores de confecções.",
+        "Você é especialista em email marketing para educação empresarial e growth digital no Brasil.",
+        "Empresa: Nexo Commerce — programas, imersões e consultorias de growth e performance para negócios digitais.",
         "",
         "CAMPANHA:",
         "- Nome: " + campaign.name,
@@ -218,7 +222,7 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
         "- Descadastros: " + pct(campaign.unsubscribe_rate) + " (max 0.5%)",
         "- Entrega: " + pct(campaign.delivery_rate),
         "",
-        "PÚBLICO: Empresários de confecções, práticos, leem email cedo (6h-8h) ou no almoço.",
+        "PÚBLICO: Empreendedores e gestores de negócios, práticos, leem email cedo (6h-8h) ou no almoço.",
         "",
         "Responda APENAS com JSON válido sem texto antes ou depois:",
         "{",
@@ -253,8 +257,28 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
       setResult(parsed);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[CampaignAI] erro:", msg);
-      setError(`Erro: ${msg}`);
+      console.error("[CampaignAI] erro, usando fallback local:", msg);
+      // Qualquer falha (sem rede, /api/claude indisponível, JSON inesperado etc.)
+      // cai num fallback local calculado a partir das métricas reais da campanha,
+      // em vez de deixar só uma mensagem de erro sem análise nenhuma.
+      const fallback = gerarAnaliseSimuladaEmail({
+        name: campaign.name,
+        open_rate: campaign.open_rate,
+        click_rate: campaign.click_rate,
+        bounce_rate: campaign.bounce_rate,
+        spam_rate: campaign.spam_rate,
+        unsubscribe_rate: campaign.unsubscribe_rate,
+        delivery_rate: campaign.delivery_rate,
+        recipients: campaign.recipients,
+        subject: subjectOverride ?? campaign.subject ?? null,
+      });
+      setResult({
+        insight_assunto: fallback.headline,
+        pontos: fallback.pontos,
+        riscos: fallback.riscos,
+        recomendacoes: fallback.recomendacoes,
+      });
+      setSimulado(true);
     } finally {
       setLoading(false);
     }
@@ -337,9 +361,16 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
         <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex gap-3">
           <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1.5">
-              Insight do assunto
-            </p>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                Insight do assunto
+              </p>
+              {simulado && (
+                <span className="text-[8px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
+                  Simulada
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-foreground/90 leading-relaxed">{result.insight_assunto}</p>
           </div>
         </div>
@@ -892,7 +923,7 @@ function VisaoGeralAI({ campaigns, totals }: { campaigns: EmailCampaign[]; total
       const bestScore  = Math.max(...campaigns.map(c => calcDelivScore(c).score));
       const worstScore = Math.min(...campaigns.map(c => calcDelivScore(c).score));
 
-      const prompt = `Você é especialista sênior em email marketing para o setor de educação empresarial voltada para confecções e indústria têxtil no Brasil. A empresa é a Costurando Sucesso, que oferece cursos, mentorias e consultorias para empresários e gestores de confecções.
+      const prompt = `Você é especialista sênior em email marketing para o setor de educação empresarial e growth digital no Brasil. A empresa é a Nexo Commerce, que oferece programas, imersões e consultorias de growth e performance para negócios digitais.
 
 Analise o panorama completo de email marketing do período:
 
@@ -917,7 +948,7 @@ DESTAQUES:
 - Testes A/B realizados: ${totals.abTests}
 
 CONTEXTO DO SETOR:
-O público é formado por empresários e gestores de confecções brasileiras. São pessoas práticas, com pouco tempo, que leem email principalmente de manhã cedo (6h-8h) e no horário de almoço. Respondem bem a conteúdo que resolve problema imediato do dia a dia da confecção (produção, custo, gestão de equipe, fornecedores). Campanhas de lançamento têm picos de abertura nos primeiros 2 dias. O setor tem sazonalidade marcada: alta em fev-mar (coleção inverno), jun-jul (coleção verão), set-out (planejamento fim de ano).
+O público é formado por empreendedores e gestores de negócios brasileiros, clientes e leads da Nexo Commerce. São pessoas práticas, com pouco tempo, que leem email principalmente de manhã cedo (6h-8h) e no horário de almoço. Respondem bem a conteúdo que resolve problema imediato do dia a dia da gestão (comercial, operação, financeiro, equipe, fornecedores). Campanhas de lançamento têm picos de abertura nos primeiros 2 dias. O setor tem sazonalidade marcada: alta em fev-mar (retomada pós-férias) e set-out (planejamento do fim de ano); picos de matrícula em torno das datas de Imersão Premium e Workshop.
 
 Responda APENAS com JSON válido neste formato, sem texto antes ou depois:
 {
@@ -925,7 +956,7 @@ Responda APENAS com JSON válido neste formato, sem texto antes ou depois:
   "destaques": ["destaque positivo 1", "destaque positivo 2", "destaque positivo 3"],
   "alertas": ["alerta crítico 1", "alerta crítico 2"],
   "acoes": ["ação prioritária 1 muito específica e acionável", "ação prioritária 2", "ação prioritária 3"],
-  "contexto_setor": "uma frase sobre como os resultados se comparam com o momento atual do setor de educação para confecções"
+  "contexto_setor": "uma frase sobre como os resultados se comparam com o momento atual do setor de educação empresarial"
 }`;
 
       const resp = await fetch("/api/claude", {
@@ -965,9 +996,9 @@ Responda APENAS com JSON válido neste formato, sem texto antes ou depois:
           {/* Insights fixos do setor enquanto não gera IA */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             {[
-              { icon: Clock, title: "Melhor horário para o setor", body: "6h–8h (antes do chão de fábrica abrir) e 12h–13h (almoço). Evitar após 17h — empresários de confecção raramente checam email no fim do expediente." },
-              { icon: TrendingUp, title: "O que funciona no setor", body: "Assuntos com número + benefício direto (ex: '3 erros que aumentam seu custo de produção'). Newsletter educativa abre 40% mais que email puramente comercial." },
-              { icon: Shield, title: "Sazonalidade confecção", body: "Picos de engajamento: fev-mar (coleção inverno), jun-jul (verão), set-out (planejamento Black Friday). Evitar grandes campanhas em jan e jul — baixo engajamento histórico." },
+              { icon: Clock, title: "Melhor horário para o setor", body: "6h–8h (antes do expediente começar) e 12h–13h (almoço). Evitar após 17h — empreendedores e gestores raramente checam email no fim do dia." },
+              { icon: TrendingUp, title: "O que funciona no setor", body: "Assuntos com número + benefício direto (ex: '3 erros que travam a expansão do seu negócio'). Newsletter educativa abre 40% mais que email puramente comercial." },
+              { icon: Shield, title: "Sazonalidade do setor", body: "Picos de engajamento: fev-mar (retomada pós-férias) e set-out (planejamento de fim de ano), coincidindo com datas de Imersão Premium e Workshop. Evitar grandes campanhas em jan e dez — baixo engajamento histórico." },
             ].map(({ icon: Icon, title, body }) => (
               <div key={title} className="p-3 rounded-xl bg-muted/20 border border-border/50 space-y-1.5">
                 <div className="flex items-center gap-1.5">

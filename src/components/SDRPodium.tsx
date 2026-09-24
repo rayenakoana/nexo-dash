@@ -89,8 +89,8 @@ export function SDRPodium({ start, end }: Props) {
                 className={cn("w-full rounded-t-md", orderedHeights[i])}
                 style={{
                   background: isCenter
-                    ? "linear-gradient(180deg, #E8192C, #5a0f16)"
-                    : "linear-gradient(180deg, #6b1c26, #3a0f14)",
+                    ? "linear-gradient(180deg, #3B82F6, #1e3a5f)"
+                    : "linear-gradient(180deg, #2c4a6b, #1a2b3d)",
                 }}
               />
             </div>

@@ -21,6 +21,16 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           dark: "hsl(var(--primary-dark))",
+          light: "hsl(var(--primary-light))",
+        },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        danger: "hsl(var(--danger))",
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -75,8 +85,8 @@ export default {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
         "accordion-up":   { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(355 82% 51% / 0.3)" },
-          "50%":      { boxShadow: "0 0 50px hsl(355 82% 51% / 0.6)" },
+          "0%, 100%": { boxShadow: "0 0 20px hsl(213 94% 55% / 0.3)" },
+          "50%":      { boxShadow: "0 0 50px hsl(213 94% 55% / 0.6)" },
         },
         "count-pop": {
           "0%":   { transform: "scale(1)" },

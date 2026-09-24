@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { EmailMarketingSection } from "@/components/EmailMarketingSection";
 import { GlassCard } from "@/components/GlassCard";
+import { AIAnalysisButton } from "@/components/AIAnalysisButton";
 import { KPICard } from "@/components/KPICard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMetaAdsInsights } from "@/hooks/useMetaAdsInsights";
@@ -29,6 +30,7 @@ const TT = {
   labelStyle: { color: "hsl(0 0% 96%)", fontWeight: 600, marginBottom: 2 },
   itemStyle:  { color: "hsl(0 0% 80%)" },
   cursor:     { fill: "hsl(0 0% 100% / 0.03)" },
+  wrapperStyle: { transition: "transform 120ms ease-out, opacity 120ms ease-out" },
 };
 
 const fmt = (n: number) => n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1000 ? (n/1000).toFixed(1)+"k" : String(Math.round(n));
@@ -36,8 +38,8 @@ const fmtFull = (n: number) => n.toLocaleString("pt-BR");
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 const pct = (n: number) => n.toFixed(1) + "%";
 
-const P  = "hsl(355 82% 51%)";
-const P2 = "hsl(355 82% 51% / 0.5)";
+const P  = "hsl(213 94% 55%)";
+const P2 = "hsl(213 94% 55% / 0.5)";
 const MUTED = "hsl(0 0% 60%)";
 
 type Tab = "meta" | "wpp" | "instagram" | "email";
@@ -52,8 +54,8 @@ function SubTitle({ children }: { children: React.ReactNode }) {
 }
 
 const ACCOUNT_LABEL: Record<string, string> = {
-  eduardocristianoriginal: "@eduardocristianoriginal",
-  costurandosucesso: "@costurandosucesso",
+  nexocommerce: "@nexocommerce",
+  nexolab: "@nexolab",
 };
 
 type SortKey = "eng" | "like_count" | "comments_count" | "shares" | "saved" | "reach" | "views" | "taxaEng" | "posted_at";
@@ -157,7 +159,7 @@ export function MarketingSection({ from, to }: Props) {
       const topC = porCampanhaRich[0];
       const prompt = `Você é um analista de tráfego pago especialista em performance digital para o mercado brasileiro de educação e consultoria B2B.
 
-A empresa é a Costurando Sucesso — oferece cursos, mentorias e consultorias para confecções e indústrias do setor de moda/vestuário. O público-alvo são empresários e gestores de confecções.
+A empresa é a Nexo Commerce — oferece programas, imersões e consultorias de growth e performance para negócios digitais (e-commerce e infoprodutos). O público-alvo são empresários e gestores de marketing/vendas.
 
 Dados do período — Meta Ads:
 - Investido total: R$ ${metaTotais.spend.toLocaleString("pt-BR",{maximumFractionDigits:0})}
@@ -477,6 +479,22 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
       {tab==="meta" && (
         <div className="space-y-4">
 
+          <div className="flex justify-end">
+            <AIAnalysisButton section="Meta Ads" dataPayload={{
+              investido_total: metaTotais.spend,
+              leads: metaTotais.leads,
+              cpl_medio: metaCPL,
+              compras: metaTotais.purchases,
+              receita: metaTotais.purchase_value,
+              roas: metaROAS,
+              ctr: metaCTR,
+              cpc: metaCPC,
+              alcance: metaTotais.reach ?? 0,
+              frequencia_media: metaFreqMedia,
+              campanhas: porCampanhaRich,
+            }} />
+          </div>
+
           {/* KPIs linha 1 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {loadingMeta ? Array.from({length:4}).map((_,i) => <Skeleton key={i} className="h-[90px] rounded-xl"/>) : (<>
@@ -649,6 +667,17 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
       {/* ── WPP ── */}
       {tab==="wpp" && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <AIAnalysisButton section="WhatsApp Campanhas" dataPayload={{
+              campanhas_disparadas: wppTotais?.campanhas ?? 0,
+              enviadas: wppTotais?.enviadas ?? 0,
+              entregues: wppTotais?.entregues ?? 0,
+              taxa_entrega: wppTotais?.taxaEntrega ?? 0,
+              lidas: wppTotais?.lidas ?? 0,
+              taxa_leitura: wppTotais?.taxaLeitura ?? 0,
+              campanhas: wppCampanhas,
+            }} />
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {loadingWpp ? Array.from({length:4}).map((_,i) => <Skeleton key={i} className="h-[90px] rounded-xl"/>) : (<>
               <KPICard title="Campanhas"  value={wppTotais?.campanhas??0}     subtitle="Disparadas no período" icon={MessageCircle}/>
@@ -714,33 +743,51 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
         <div className="space-y-4">
 
           {/* Filtro de conta */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Conta:</span>
-            <div className="flex gap-1 p-0.5 rounded-lg border border-border bg-card/40">
-              {([null, "eduardocristianoriginal", "costurandosucesso"] as (string|null)[]).map(acc => (
-                <button key={acc??"todas"} onClick={() => setIgAccount(acc)}
-                  className={cn("px-3 py-1 rounded-md text-xs font-semibold transition-all",
-                    igAccount===acc
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}>
-                  {acc===null?"Todas":acc==="eduardocristianoriginal"?"@EC":"@CS"}
-                </button>
-              ))}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Conta:</span>
+              <div className="flex gap-1 p-0.5 rounded-lg border border-border bg-card/40">
+                {([null, "nexocommerce", "nexolab"] as (string|null)[]).map(acc => (
+                  <button key={acc??"todas"} onClick={() => setIgAccount(acc)}
+                    className={cn("px-3 py-1 rounded-md text-xs font-semibold transition-all",
+                      igAccount===acc
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}>
+                    {acc===null?"Todas":acc==="nexocommerce"?"@NC":"@NL"}
+                  </button>
+                ))}
+              </div>
             </div>
+            <AIAnalysisButton section="Instagram" dataPayload={{
+              conta_filtrada: igAccount ?? "todas",
+              posts_no_periodo: postsFiltered.length,
+              engajamento_total: igEngTotal,
+              alcance_total: igAlcance,
+              views_totais: igViews,
+              taxa_engajamento: igTaxaEng,
+              engajamento_medio_por_post: igEngPost,
+              posts: postsFiltered.map(p => ({
+                name: p.caption?.slice(0, 40) ?? p.username,
+                like_count: p.like_count,
+                comments_count: p.comments_count,
+                reach: p.reach,
+              })),
+              performance_por_formato: porFormato,
+            }} />
           </div>
 
           {/* KPIs */}
           {!igAccount ? (() => {
             // ── modo TODAS: total + EC + CS + Posts em grid 4 colunas
-            const fEC = followersByAccount["eduardocristianoriginal"];
-            const fCS = followersByAccount["costurandosucesso"];
+            const fEC = followersByAccount["nexocommerce"];
+            const fCS = followersByAccount["nexolab"];
             const totalSeg = (fEC?.last ?? 0) + (fCS?.last ?? 0);
             const totalDelta = ((fEC ? fEC.last - fEC.first : 0) + (fCS ? fCS.last - fCS.first : 0));
-            const gainedEC = dailyData.filter(d => d.username==="eduardocristianoriginal").reduce((s,d)=>s+(d.followers_gained||0),0);
-            const lostEC   = dailyData.filter(d => d.username==="eduardocristianoriginal").reduce((s,d)=>s+(d.followers_lost||0),0);
-            const gainedCS = dailyData.filter(d => d.username==="costurandosucesso").reduce((s,d)=>s+(d.followers_gained||0),0);
-            const lostCS   = dailyData.filter(d => d.username==="costurandosucesso").reduce((s,d)=>s+(d.followers_lost||0),0);
+            const gainedEC = dailyData.filter(d => d.username==="nexocommerce").reduce((s,d)=>s+(d.followers_gained||0),0);
+            const lostEC   = dailyData.filter(d => d.username==="nexocommerce").reduce((s,d)=>s+(d.followers_lost||0),0);
+            const gainedCS = dailyData.filter(d => d.username==="nexolab").reduce((s,d)=>s+(d.followers_gained||0),0);
+            const lostCS   = dailyData.filter(d => d.username==="nexolab").reduce((s,d)=>s+(d.followers_lost||0),0);
             return (
               <>
                 {/* linha 1: total + posts + eng + taxa */}
@@ -758,11 +805,11 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                 </div>
                 {/* linha 2: EC | CS | views */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <KPICard title="Seguidores @EC"
+                  <KPICard title="Seguidores @NC"
                     value={fmtFull(fEC?.last ?? 0)}
                     subtitle={`${(fEC ? fEC.last-fEC.first : 0)>=0?"+":""}${(fEC ? fEC.last-fEC.first : 0).toLocaleString("pt-BR")} líquido · ↑${gainedEC} ↓${lostEC}`}
                     icon={Users}/>
-                  <KPICard title="Seguidores @CS"
+                  <KPICard title="Seguidores @NL"
                     value={fmtFull(fCS?.last ?? 0)}
                     subtitle={`${(fCS ? fCS.last-fCS.first : 0)>=0?"+":""}${(fCS ? fCS.last-fCS.first : 0).toLocaleString("pt-BR")} líquido · ↑${gainedCS} ↓${lostCS}`}
                     icon={Users}/>
@@ -777,7 +824,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
             const delta = f ? f.last - f.first : 0;
             const gained = dailyFiltered.filter(d => d.username===igAccount).reduce((s,d)=>s+(d.followers_gained||0),0);
             const lost   = dailyFiltered.filter(d => d.username===igAccount).reduce((s,d)=>s+(d.followers_lost||0),0);
-            const label  = igAccount==="eduardocristianoriginal" ? "@EC" : "@CS";
+            const label  = igAccount==="nexocommerce" ? "@NC" : "@NL";
             return (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -865,7 +912,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                       return (
                         <div key={acc} className="rounded-lg p-3 bg-muted/10 border border-border/30">
                           <p className="text-[10px] font-semibold text-primary mb-2">
-                            {acc==="eduardocristianoriginal"?"@EC":"@CS"}
+                            {acc==="nexocommerce"?"@NC":"@NL"}
                           </p>
                           <div className="space-y-1">
                             <div className="flex justify-between text-[10px]">
@@ -903,7 +950,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                       return (
                         <div key={acc} className="rounded-lg p-3 bg-muted/10 border border-border/30">
                           <p className="text-[10px] font-semibold text-primary mb-1">
-                            {acc==="eduardocristianoriginal"?"@EC":"@CS"}
+                            {acc==="nexocommerce"?"@NC":"@NL"}
                           </p>
                           <div className="space-y-1">
                             <div className="flex justify-between text-[10px]">
@@ -961,7 +1008,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     <Tooltip {...TT} formatter={(v:number) => [`${v}`, "Eng. médio"]}/>
                     <Bar dataKey="engMedio" name="Eng. médio" radius={[4,4,0,0]}>
                       {horarioData.map(d => (
-                        <Cell key={d.hora} fill={`hsl(355 82% 51% / ${(0.3 + (d.engMedio/maxHorario)*0.7).toFixed(2)})`}/>
+                        <Cell key={d.hora} fill={`hsl(213 94% 55% / ${(0.3 + (d.engMedio/maxHorario)*0.7).toFixed(2)})`}/>
                       ))}
                     </Bar>
                   </BarChart>
@@ -1053,7 +1100,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     {visibleAccounts.map((acc,i) => (
                       <Area key={`${acc}_views`} type="monotone"
                         dataKey={`${acc}_views`}
-                        name={`${acc==="eduardocristianoriginal"?"EC":"CS"} — visitas`}
+                        name={`${acc==="nexocommerce"?"NC":"NL"} — visitas`}
                         stroke={i===0?P:P2} strokeWidth={2}
                         fill={i===0?"url(#gradViews)":"url(#gradClicks)"} dot={false}/>
                     ))}
@@ -1075,7 +1122,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     <Tooltip {...TT} formatter={(v:number) => `${v}%`}/>
                     <Bar dataKey="pctSeguidores" name="% alcance vs seguidores" fill={P} radius={[4,4,0,0]}>
                       {alcanceVsSeguidores.map((_, i) => (
-                        <Cell key={i} fill={`hsl(355 82% 51% / ${0.5 + i * 0.1})`}/>
+                        <Cell key={i} fill={`hsl(213 94% 55% / ${0.5 + i * 0.1})`}/>
                       ))}
                     </Bar>
                   </BarChart>
@@ -1118,8 +1165,8 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     <span key={h.tag}
                       className={cn("px-2.5 py-1 rounded-full border transition-colors", ratio>0.7?"text-xs":"text-[10px]")}
                       style={{
-                        background:  `hsl(355 82% 51% / ${(0.05+ratio*0.15).toFixed(2)})`,
-                        borderColor: `hsl(355 82% 51% / ${(0.15+ratio*0.25).toFixed(2)})`,
+                        background:  `hsl(213 94% 55% / ${(0.05+ratio*0.15).toFixed(2)})`,
+                        borderColor: `hsl(213 94% 55% / ${(0.15+ratio*0.25).toFixed(2)})`,
                         color: `hsl(0 0% ${55+ratio*41}%)`,
                         fontWeight: ratio>0.5?600:400,
                       }}>
@@ -1213,7 +1260,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                       <tr key={p.post_id} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
                         <td className="py-2 pr-3">
                           <span className="text-[10px] font-semibold text-primary">
-                            {p.username==="eduardocristianoriginal"?"@EC":"@CS"}
+                            {p.username==="nexocommerce"?"@NC":"@NL"}
                           </span>
                         </td>
                         <td className="py-2 pr-3 font-mono text-[10px] text-muted-foreground">
@@ -1412,7 +1459,7 @@ function InstagramAlertas({
   const dadosCrescimento = useMemo(() => {
     return Object.entries(followersByAccountFull).map(([acc, f]) => {
       const fc     = forecast?.[acc];
-      const label  = acc==="eduardocristianoriginal" ? "@EC" : "@CS";
+      const label  = acc==="nexocommerce" ? "@NC" : "@NL";
       const delta  = f.last - f.first;
       const perDay = fc?.per_day ?? 0;
       const proj30 = fc?.next_30 ?? f.last;
@@ -1556,7 +1603,7 @@ function ImpactoConteudo({ postsData, dailyData, igAccount }: ImpactoConteudoPro
       });
       const saldo  = gained - lost;
       const tipo   = tipoLabel(p.media_type);
-      const conta  = p.username==="eduardocristianoriginal"?"@EC":"@CS";
+      const conta  = p.username==="nexocommerce"?"@NC":"@NL";
       const caption= (p.caption||"").slice(0,50)+(p.caption?.length>50?"…":"");
       const eng    = p.like_count+p.comments_count+p.shares+p.saved;
       const taxaEng= p.reach>0?parseFloat((eng/p.reach*100).toFixed(1)):0;
@@ -1871,8 +1918,8 @@ function InstagramInsightsAI({
   const [generated, setGenerated] = useState(false);
 
   const buildPrompt = () => {
-    const conta = igAccount === "eduardocristianoriginal" ? "@eduardocristianoriginal"
-      : igAccount === "costurandosucesso" ? "@costurandosucesso"
+    const conta = igAccount === "nexocommerce" ? "@nexocommerce"
+      : igAccount === "nexolab" ? "@nexolab"
       : "todas as contas combinadas";
 
     const topPost = [...postsFiltered]
@@ -1889,7 +1936,7 @@ function InstagramInsightsAI({
       const delta = f.last - f.first;
       const gained = dailyFiltered.filter(d=>d.username===acc).reduce((s,d)=>s+(d.followers_gained||0),0);
       const lost   = dailyFiltered.filter(d=>d.username===acc).reduce((s,d)=>s+(d.followers_lost||0),0);
-      return `${acc==="eduardocristianoriginal"?"@EC":"@CS"}: ${f.last.toLocaleString("pt-BR")} seguidores, delta ${delta>=0?"+":""}${delta} no período, +${gained} novos, -${lost} saídas${forecast?`, tendência ${forecast.per_day>=0?"+":""}${forecast.per_day}/dia, previsão ${forecast.next_30.toLocaleString("pt-BR")} em 30 dias`:""}`;
+      return `${acc==="nexocommerce"?"@NC":"@NL"}: ${f.last.toLocaleString("pt-BR")} seguidores, delta ${delta>=0?"+":""}${delta} no período, +${gained} novos, -${lost} saídas${forecast?`, tendência ${forecast.per_day>=0?"+":""}${forecast.per_day}/dia, previsão ${forecast.next_30.toLocaleString("pt-BR")} em 30 dias`:""}`;
     }).join("\n");
 
     const excelente = erBenchmark.find(f=>f.faixa.includes("Excelente"))?.posts ?? 0;
