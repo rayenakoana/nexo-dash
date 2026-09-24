@@ -29,8 +29,8 @@ SELECT setseed(0.4242);
 -- -----------------------------------------------------------------------------
 -- Duas contas fictícias, diferenciadas pelo prefixo do campaign_name (a tabela
 -- não tem coluna de conta/account_id — o frontend agrupa só por campaign_id):
---   Conta A "Moda Prime Ateliê"        → prefixo "[Moda Prime]"  (performance regular)
---   Conta B "Studio Confecção Digital" → prefixo "[Studio CD]"   (performance forte)
+--   Conta A "Nexo Commerce | Principal" → prefixo "[Nexo Commerce]" (volume maior)
+--   Conta B "Nexo Lab | Growth"         → prefixo "[Nexo Lab]"      (performance forte)
 -- 3 campanhas por conta, granularidade diária, 2026-07-01 a 2026-09-30 (92 dias).
 
 DELETE FROM wpp.meta_ads_insights
@@ -45,12 +45,12 @@ WHERE campaign_id IN (
 
 WITH params AS (
   SELECT * FROM (VALUES
-    ('11111111-1111-4111-8111-111111111101'::uuid, '[Moda Prime] Curso Corte e Costura',  'A', 2200::numeric, 0.0090::numeric, 1.35::numeric, 0.045::numeric, 0.08::numeric,  780::numeric),
-    ('11111111-1111-4111-8111-111111111102'::uuid, '[Moda Prime] Remarketing Carrinho',   'A',  900::numeric, 0.0140::numeric, 1.10::numeric, 0.090::numeric, 0.15::numeric,  780::numeric),
-    ('11111111-1111-4111-8111-111111111103'::uuid, '[Moda Prime] Institucional',          'A', 1500::numeric, 0.0070::numeric, 1.60::numeric, 0.055::numeric, 0.05::numeric,  780::numeric),
-    ('22222222-2222-4222-8222-222222222201'::uuid, '[Studio CD] Lançamento Mentoria PRO', 'B', 3200::numeric, 0.0210::numeric, 0.85::numeric, 0.070::numeric, 0.22::numeric, 1450::numeric),
-    ('22222222-2222-4222-8222-222222222202'::uuid, '[Studio CD] Leads Frio - Interesse',  'B', 2600::numeric, 0.0160::numeric, 0.95::numeric, 0.060::numeric, 0.12::numeric, 1450::numeric),
-    ('22222222-2222-4222-8222-222222222203'::uuid, '[Studio CD] Retargeting Vídeo',       'B', 1100::numeric, 0.0280::numeric, 0.70::numeric, 0.130::numeric, 0.30::numeric, 1450::numeric)
+    ('11111111-1111-4111-8111-111111111101'::uuid, '[Nexo Commerce] Growth Setembro',       'A', 2200::numeric, 0.0090::numeric, 1.35::numeric, 0.045::numeric, 0.08::numeric,  780::numeric),
+    ('11111111-1111-4111-8111-111111111102'::uuid, '[Nexo Commerce] Remarketing Growth',    'A',  900::numeric, 0.0140::numeric, 1.10::numeric, 0.090::numeric, 0.15::numeric,  780::numeric),
+    ('11111111-1111-4111-8111-111111111103'::uuid, '[Nexo Commerce] Captação Setembro',     'A', 1500::numeric, 0.0070::numeric, 1.60::numeric, 0.055::numeric, 0.05::numeric,  780::numeric),
+    ('22222222-2222-4222-8222-222222222201'::uuid, '[Nexo Lab] Scale Q3',                   'B', 3200::numeric, 0.0210::numeric, 0.85::numeric, 0.070::numeric, 0.22::numeric, 1450::numeric),
+    ('22222222-2222-4222-8222-222222222202'::uuid, '[Nexo Lab] Workshop Performance',       'B', 2600::numeric, 0.0160::numeric, 0.95::numeric, 0.060::numeric, 0.12::numeric, 1450::numeric),
+    ('22222222-2222-4222-8222-222222222203'::uuid, '[Nexo Lab] Retargeting Vídeo',          'B', 1100::numeric, 0.0280::numeric, 0.70::numeric, 0.130::numeric, 0.30::numeric, 1450::numeric)
   ) AS t(campaign_id, campaign_name, account, base_impr, base_ctr, base_cpc, conv_rate, purchase_rate, avg_ticket)
 ),
 days AS (
@@ -105,9 +105,9 @@ FROM step5;
 -- Duas contas: os usernames abaixo são os mesmos já hard-coded no frontend
 -- (src/components/MarketingSection.tsx: ACCOUNT_LABEL, filtro de conta), por
 -- isso são reaproveitados tal como estão no código-fonte para que o filtro de
--- conta e os KPIs "@EC" / "@CS" funcionem sem alterar a UI.
---   modaprimeoficial → perfil pessoal (menor base, crescimento moderado)
---   studioconfeccao       → perfil institucional (base maior, crescimento mais forte)
+-- conta e os KPIs "@NC" / "@NL" funcionem sem alterar a UI.
+--   nexocommerce → conta principal (base maior, alcance/volume maior)
+--   nexolab      → conta menor, com engajamento proporcional mais alto
 
 DELETE FROM wpp.instagram_account_daily
 WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333-8333-333333333302');
@@ -118,8 +118,8 @@ WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333
 
 WITH accounts AS (
   SELECT * FROM (VALUES
-    ('33333333-3333-4333-8333-333333333301'::uuid, 'modaprimeoficial', 18400::numeric, 120::numeric, 40::numeric, 18::numeric, 14::numeric, 8::numeric),
-    ('33333333-3333-4333-8333-333333333302'::uuid, 'studioconfeccao',       26800::numeric, 340::numeric, 68::numeric, 26::numeric, 22::numeric, 12::numeric)
+    ('33333333-3333-4333-8333-333333333301'::uuid, 'nexocommerce', 26800::numeric, 340::numeric, 68::numeric, 26::numeric, 22::numeric, 12::numeric),
+    ('33333333-3333-4333-8333-333333333302'::uuid, 'nexolab',      18400::numeric, 120::numeric, 40::numeric, 18::numeric, 14::numeric, 8::numeric)
   ) AS t(account_id, username, start_followers, start_media, avg_gain, gain_var, avg_loss, loss_var)
 ),
 days AS (
@@ -153,13 +153,13 @@ WHERE account_id IN ('33333333-3333-4333-8333-333333333301', '33333333-3333-4333
 
 WITH accounts AS (
   SELECT * FROM (VALUES
-    ('33333333-3333-4333-8333-333333333301'::uuid, 'modaprimeoficial', 21000::numeric),
-    ('33333333-3333-4333-8333-333333333302'::uuid, 'studioconfeccao',       32000::numeric)
-  ) AS t(account_id, username, base_reach)
+    ('33333333-3333-4333-8333-333333333301'::uuid, 'nexocommerce', 32000::numeric, 1.00::numeric),
+    ('33333333-3333-4333-8333-333333333302'::uuid, 'nexolab',      21000::numeric, 1.55::numeric)
+  ) AS t(account_id, username, base_reach, eng_multiplier)
 ),
 posts AS (
   SELECT
-    a.account_id, a.username, a.base_reach, gs AS post_idx,
+    a.account_id, a.username, a.base_reach, a.eng_multiplier, gs AS post_idx,
     (TIMESTAMP '2026-07-01 08:00:00' + (gs * interval '2.5 days') + (make_interval(hours => (8 + (gs % 11))))) AS posted_at
   FROM accounts a CROSS JOIN generate_series(0, 36) gs
 ),
@@ -174,14 +174,14 @@ SELECT
   account_id, username, posted_at, media_type,
   'https://instagram.com/p/demo' || REPLACE(gen_random_uuid()::text, '-', ''),
   CASE media_type
-    WHEN 'VIDEO'           THEN 'Bastidores da produção de hoje 🧵✂️ #confeccao #modabrasileira #bastidores'
-    WHEN 'CAROUSEL_ALBUM'  THEN '5 erros que encarecem sua produção sem você perceber 👇 #gestaodeconfeccao #moda'
-    ELSE                        'Novo lote pronto para envio! Qualidade que o cliente sente. #confeccao #producao'
+    WHEN 'VIDEO'           THEN 'Bastidores do time hoje 🚀 #growth #ecommerce #bastidores'
+    WHEN 'CAROUSEL_ALBUM'  THEN '5 erros que travam o crescimento do seu negócio digital 👇 #growth #performance'
+    ELSE                        'Nova turma com vagas abertas! Resultado que o cliente sente. #growth #performance'
   END,
-  ROUND(base_reach * (0.020 + random() * 0.050))::integer AS like_count,
-  ROUND(base_reach * (0.0010 + random() * 0.0040))::integer AS comments_count,
-  ROUND(base_reach * (0.0005 + random() * 0.0020))::integer AS shares,
-  ROUND(base_reach * (0.0020 + random() * 0.0060))::integer AS saved,
+  ROUND(base_reach * eng_multiplier * (0.020 + random() * 0.050))::integer AS like_count,
+  ROUND(base_reach * eng_multiplier * (0.0010 + random() * 0.0040))::integer AS comments_count,
+  ROUND(base_reach * eng_multiplier * (0.0005 + random() * 0.0020))::integer AS shares,
+  ROUND(base_reach * eng_multiplier * (0.0020 + random() * 0.0060))::integer AS saved,
   ROUND(base_reach * (0.80 + random() * 0.50))::integer AS reach,
   ROUND(base_reach * (1.10 + random() * 0.60))::integer AS impressions,
   CASE WHEN media_type = 'VIDEO' THEN ROUND(base_reach * (1.50 + random() * 1.50))::integer ELSE 0 END AS views,
@@ -197,7 +197,7 @@ FROM enriched;
 
 DELETE FROM wpp.email_campaigns
 WHERE sent_at BETWEEN '2026-07-01' AND '2026-09-30 23:59:59'
-  AND name LIKE 'CS Digital:%';
+  AND (name LIKE 'CS Digital:%' OR name LIKE 'Nexo Commerce:%');
 
 WITH idx AS (
   SELECT gs AS i FROM generate_series(0, 44) gs
@@ -208,23 +208,23 @@ rows1 AS (
     (TIMESTAMP '2026-07-01 07:30:00' + (i * interval '2 days') + (make_interval(hours => (i % 5)))) AS sent_at,
     CASE WHEN i % 2 = 0 THEN 'commercial' ELSE 'news' END AS type,
     (ARRAY[
-      'Últimas vagas: Turma de Corte e Costura Avançado',
-      'Como reduzir 20% do desperdício de tecido na sua confecção',
-      '[Aviso] Sua produção está pronta para a próxima coleção?',
-      'Webinar gratuito: gestão de equipe na confecção',
+      'Newsletter #09 — Tendências de Mercado',
+      'Growth — Últimas vagas',
+      'Scale — Case de crescimento',
+      'Workshop — Convite',
+      'Newsletter #10 — Estratégias de vendas',
       'Guia rápido: precificação sem perder margem',
-      'Convite exclusivo: Mentoria Coletiva de Setembro',
-      'O erro nº 1 que trava o crescimento de confecções pequenas',
+      'Convite exclusivo: Consultoria de Performance de Setembro',
+      'O erro nº 1 que trava o crescimento de negócios digitais pequenos',
       'Última chamada — inscrições encerram hoje',
-      'Novidade: checklist de fornecedores confiáveis',
-      'Case de sucesso: de 3 para 12 funcionários em 1 ano'
+      'Case de sucesso: de 3 para 12 pessoas no time em 1 ano'
     ])[1 + (i % 10)] AS subject,
     (ARRAY[
-      'CS Digital: Newsletter Semanal',
-      'CS Digital: Oferta Comercial',
-      'CS Digital: Convite Evento',
-      'CS Digital: Conteúdo Educativo',
-      'CS Digital: Lembrete Turma'
+      'Nexo Commerce: Newsletter Semanal',
+      'Nexo Commerce: Oferta Comercial',
+      'Nexo Commerce: Convite Evento',
+      'Nexo Commerce: Conteúdo Educativo',
+      'Nexo Commerce: Lembrete Turma'
     ])[1 + (i % 5)] || ' #' || (i + 1) AS name
   FROM idx
 ),
@@ -264,9 +264,9 @@ FROM rows3;
 -- 3 pares de teste A/B (6 campanhas adicionais), datas fixas dentro do período
 WITH ab AS (
   SELECT * FROM (VALUES
-    (gen_random_uuid(), 'CS Digital: Teste A/B Lançamento Julho',   TIMESTAMP '2026-07-15 08:00:00', 'commercial'),
-    (gen_random_uuid(), 'CS Digital: Teste A/B Newsletter Agosto',  TIMESTAMP '2026-08-12 07:45:00', 'news'),
-    (gen_random_uuid(), 'CS Digital: Teste A/B Oferta Setembro',    TIMESTAMP '2026-09-10 08:15:00', 'commercial')
+    (gen_random_uuid(), 'Nexo Commerce: Teste A/B Lançamento Julho',   TIMESTAMP '2026-07-15 08:00:00', 'commercial'),
+    (gen_random_uuid(), 'Nexo Commerce: Teste A/B Newsletter Agosto',  TIMESTAMP '2026-08-12 07:45:00', 'news'),
+    (gen_random_uuid(), 'Nexo Commerce: Teste A/B Oferta Setembro',    TIMESTAMP '2026-09-10 08:15:00', 'commercial')
   ) AS t(ab_group_id, base_name, sent_at, type)
 ),
 variants AS (
@@ -309,10 +309,16 @@ FROM final;
 -- -----------------------------------------------------------------------------
 -- 4) WHATSAPP — wpp.campaigns / wpp.campaign_sends
 -- -----------------------------------------------------------------------------
--- 12 campanhas espalhadas de 2026-07-01 a 2026-09-20, cada uma com centenas a
--- milhares de envios individuais em campaign_sends. Taxas fixas por envio
--- (4% falha, 55% lida, 35% entregue-não-lida, 6% só enviada) garantem que os
--- totais agregados batem com o esperado pelo hook useWppCampanhasResumo.
+-- 12 campanhas espalhadas de 2026-07-01 a 2026-09-20, 2.000-15.000 envios cada,
+-- com taxa de entrega/leitura variando por campanha (entrega 90-98%, leitura
+-- 65-90% do entregue) para não repetir os mesmos números em todas.
+-- Também remove explicitamente qualquer campanha de teste/dev que não deve
+-- aparecer na DEMO (ex.: "Teste Motor de Disparo - Hello World").
+
+DELETE FROM wpp.campaign_sends
+WHERE campaign_id IN (SELECT id FROM wpp.campaigns WHERE name ILIKE '%teste motor de disparo%' OR name ILIKE '%hello world%');
+DELETE FROM wpp.campaigns
+WHERE name ILIKE '%teste motor de disparo%' OR name ILIKE '%hello world%';
 
 DELETE FROM wpp.campaign_sends
 WHERE campaign_id IN (
@@ -335,55 +341,59 @@ WHERE id IN (
 
 WITH camp AS (
   SELECT * FROM (VALUES
-    ('44444444-4444-4444-8444-444444444401'::uuid, 'Boas-vindas Novo Lead',              TIMESTAMP '2026-07-02 09:00:00', 420),
-    ('44444444-4444-4444-8444-444444444402'::uuid, 'Reativação Leads Frios - Julho',     TIMESTAMP '2026-07-09 10:00:00', 1350),
-    ('44444444-4444-4444-8444-444444444403'::uuid, 'Lembrete Webinar Gratuito',          TIMESTAMP '2026-07-18 14:00:00', 890),
-    ('44444444-4444-4444-8444-444444444404'::uuid, 'Convite Mentoria Coletiva',          TIMESTAMP '2026-07-27 09:30:00', 610),
-    ('44444444-4444-4444-8444-444444444405'::uuid, 'Recuperação Carrinho Curso',         TIMESTAMP '2026-08-05 11:00:00', 740),
-    ('44444444-4444-4444-8444-444444444406'::uuid, 'Pesquisa de Satisfação Alunos',      TIMESTAMP '2026-08-13 15:00:00', 520),
-    ('44444444-4444-4444-8444-444444444407'::uuid, 'Promoção Relâmpago Materiais',       TIMESTAMP '2026-08-20 09:00:00', 1680),
-    ('44444444-4444-4444-8444-444444444408'::uuid, 'Convite Live Instagram',             TIMESTAMP '2026-08-28 16:00:00', 460),
-    ('44444444-4444-4444-8444-444444444409'::uuid, 'Lançamento Turma Setembro',          TIMESTAMP '2026-09-03 09:00:00', 2100),
-    ('44444444-4444-4444-8444-444444444410'::uuid, 'Follow-up Pós-Evento',               TIMESTAMP '2026-09-10 10:30:00', 780),
-    ('44444444-4444-4444-8444-444444444411'::uuid, 'Oferta Última Chamada',              TIMESTAMP '2026-09-16 08:00:00', 950),
-    ('44444444-4444-4444-8444-444444444412'::uuid, 'Alerta Vagas Limitadas',             TIMESTAMP '2026-09-20 09:00:00', 630)
-  ) AS t(id, name, created_at, total_target)
+    ('44444444-4444-4444-8444-444444444401'::uuid, 'Growth — Convite',                   TIMESTAMP '2026-07-02 09:00:00',  4200, 0.94::numeric, 0.78::numeric),
+    ('44444444-4444-4444-8444-444444444402'::uuid, 'Remarketing Growth',                 TIMESTAMP '2026-07-09 10:00:00', 11350, 0.91::numeric, 0.69::numeric),
+    ('44444444-4444-4444-8444-444444444403'::uuid, 'Workshop — Últimas vagas',           TIMESTAMP '2026-07-18 14:00:00',  6890, 0.95::numeric, 0.82::numeric),
+    ('44444444-4444-4444-8444-444444444404'::uuid, 'Scale — Follow-up',                  TIMESTAMP '2026-07-27 09:30:00',  3610, 0.97::numeric, 0.74::numeric),
+    ('44444444-4444-4444-8444-444444444405'::uuid, 'Newsletter — Conteúdo',              TIMESTAMP '2026-08-05 11:00:00',  5740, 0.92::numeric, 0.71::numeric),
+    ('44444444-4444-4444-8444-444444444406'::uuid, 'Remarketing — Leads interessados',   TIMESTAMP '2026-08-13 15:00:00',  2980, 0.96::numeric, 0.88::numeric),
+    ('44444444-4444-4444-8444-444444444407'::uuid, 'Scale Q3 — Promoção Relâmpago',      TIMESTAMP '2026-08-20 09:00:00', 14680, 0.90::numeric, 0.66::numeric),
+    ('44444444-4444-4444-8444-444444444408'::uuid, 'Growth — Convite Live',              TIMESTAMP '2026-08-28 16:00:00',  2460, 0.98::numeric, 0.85::numeric),
+    ('44444444-4444-4444-8444-444444444409'::uuid, 'Growth Setembro — Lançamento',       TIMESTAMP '2026-09-03 09:00:00', 15200, 0.93::numeric, 0.73::numeric),
+    ('44444444-4444-4444-8444-444444444410'::uuid, 'Workshop — Follow-up Pós-Evento',    TIMESTAMP '2026-09-10 10:30:00',  4780, 0.95::numeric, 0.80::numeric),
+    ('44444444-4444-4444-8444-444444444411'::uuid, 'Newsletter — Oferta Última Chamada', TIMESTAMP '2026-09-16 08:00:00',  7950, 0.91::numeric, 0.67::numeric),
+    ('44444444-4444-4444-8444-444444444412'::uuid, 'Scale — Alerta Vagas Limitadas',     TIMESTAMP '2026-09-20 09:00:00',  3630, 0.97::numeric, 0.90::numeric)
+  ) AS t(id, name, created_at, total_target, delivery_rate, read_of_delivered)
 )
 INSERT INTO wpp.campaigns (id, name, status, created_at)
 SELECT id, name, CASE WHEN created_at > TIMESTAMP '2026-09-19' THEN 'firing' ELSE 'completed' END, created_at
 FROM camp;
 
 WITH camp AS (
-  SELECT * FROM (VALUES
-    ('44444444-4444-4444-8444-444444444401'::uuid, TIMESTAMP '2026-07-02 09:00:00', 420),
-    ('44444444-4444-4444-8444-444444444402'::uuid, TIMESTAMP '2026-07-09 10:00:00', 1350),
-    ('44444444-4444-4444-8444-444444444403'::uuid, TIMESTAMP '2026-07-18 14:00:00', 890),
-    ('44444444-4444-4444-8444-444444444404'::uuid, TIMESTAMP '2026-07-27 09:30:00', 610),
-    ('44444444-4444-4444-8444-444444444405'::uuid, TIMESTAMP '2026-08-05 11:00:00', 740),
-    ('44444444-4444-4444-8444-444444444406'::uuid, TIMESTAMP '2026-08-13 15:00:00', 520),
-    ('44444444-4444-4444-8444-444444444407'::uuid, TIMESTAMP '2026-08-20 09:00:00', 1680),
-    ('44444444-4444-4444-8444-444444444408'::uuid, TIMESTAMP '2026-08-28 16:00:00', 460),
-    ('44444444-4444-4444-8444-444444444409'::uuid, TIMESTAMP '2026-09-03 09:00:00', 2100),
-    ('44444444-4444-4444-8444-444444444410'::uuid, TIMESTAMP '2026-09-10 10:30:00', 780),
-    ('44444444-4444-4444-8444-444444444411'::uuid, TIMESTAMP '2026-09-16 08:00:00', 950),
-    ('44444444-4444-4444-8444-444444444412'::uuid, TIMESTAMP '2026-09-20 09:00:00', 630)
-  ) AS t(campaign_id, base_time, total_target)
+  SELECT id AS campaign_id, name, created_at AS base_time, total_target, delivery_rate, read_of_delivered
+  FROM (VALUES
+    ('44444444-4444-4444-8444-444444444401'::uuid, 'Growth — Convite',                   TIMESTAMP '2026-07-02 09:00:00',  4200, 0.94::numeric, 0.78::numeric),
+    ('44444444-4444-4444-8444-444444444402'::uuid, 'Remarketing Growth',                 TIMESTAMP '2026-07-09 10:00:00', 11350, 0.91::numeric, 0.69::numeric),
+    ('44444444-4444-4444-8444-444444444403'::uuid, 'Workshop — Últimas vagas',           TIMESTAMP '2026-07-18 14:00:00',  6890, 0.95::numeric, 0.82::numeric),
+    ('44444444-4444-4444-8444-444444444404'::uuid, 'Scale — Follow-up',                  TIMESTAMP '2026-07-27 09:30:00',  3610, 0.97::numeric, 0.74::numeric),
+    ('44444444-4444-4444-8444-444444444405'::uuid, 'Newsletter — Conteúdo',              TIMESTAMP '2026-08-05 11:00:00',  5740, 0.92::numeric, 0.71::numeric),
+    ('44444444-4444-4444-8444-444444444406'::uuid, 'Remarketing — Leads interessados',   TIMESTAMP '2026-08-13 15:00:00',  2980, 0.96::numeric, 0.88::numeric),
+    ('44444444-4444-4444-8444-444444444407'::uuid, 'Scale Q3 — Promoção Relâmpago',      TIMESTAMP '2026-08-20 09:00:00', 14680, 0.90::numeric, 0.66::numeric),
+    ('44444444-4444-4444-8444-444444444408'::uuid, 'Growth — Convite Live',              TIMESTAMP '2026-08-28 16:00:00',  2460, 0.98::numeric, 0.85::numeric),
+    ('44444444-4444-4444-8444-444444444409'::uuid, 'Growth Setembro — Lançamento',       TIMESTAMP '2026-09-03 09:00:00', 15200, 0.93::numeric, 0.73::numeric),
+    ('44444444-4444-4444-8444-444444444410'::uuid, 'Workshop — Follow-up Pós-Evento',    TIMESTAMP '2026-09-10 10:30:00',  4780, 0.95::numeric, 0.80::numeric),
+    ('44444444-4444-4444-8444-444444444411'::uuid, 'Newsletter — Oferta Última Chamada', TIMESTAMP '2026-09-16 08:00:00',  7950, 0.91::numeric, 0.67::numeric),
+    ('44444444-4444-4444-8444-444444444412'::uuid, 'Scale — Alerta Vagas Limitadas',     TIMESTAMP '2026-09-20 09:00:00',  3630, 0.97::numeric, 0.90::numeric)
+  ) AS t(id, name, created_at, total_target, delivery_rate, read_of_delivered)
 ),
 sends AS (
   SELECT
     c.campaign_id,
     (c.base_time + (gs || ' seconds')::interval) AS sent_at,
-    random() AS r
+    random() AS r,
+    c.delivery_rate,
+    -- fração do total que fica "lida" (entregue*read_of_delivered) vs. só entregue vs. falha
+    (c.delivery_rate * c.read_of_delivered) AS read_frac
   FROM camp c CROSS JOIN LATERAL generate_series(1, c.total_target) AS gs
 )
 INSERT INTO wpp.campaign_sends (campaign_id, status, sent_at, created_at)
 SELECT
   campaign_id,
   CASE
-    WHEN r < 0.04 THEN 'failed'
-    WHEN r < 0.59 THEN 'read'
-    WHEN r < 0.94 THEN 'delivered'
-    ELSE 'sent'
+    WHEN r < read_frac THEN 'read'
+    WHEN r < delivery_rate THEN 'delivered'
+    WHEN r < delivery_rate + (1 - delivery_rate) * 0.60 THEN 'sent'
+    ELSE 'failed'
   END,
   sent_at, sent_at
 FROM sends;
@@ -398,5 +408,5 @@ COMMIT;
 --   wpp.instagram_post_insights  : 2 contas   x 37 posts  =  74 linhas
 --   wpp.email_campaigns          : 45 + 6 (A/B)           =  51 linhas
 --   wpp.campaigns                : 12 linhas
---   wpp.campaign_sends           : soma dos total_target  ≈ 11.050 linhas
+--   wpp.campaign_sends           : soma dos total_target  ≈ 83.470 linhas
 -- =============================================================================

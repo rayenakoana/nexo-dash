@@ -199,8 +199,8 @@ function CampaignAI({ campaign }: { campaign: EmailCampaign }) {
         : '"insight_assunto": null,';
 
       const prompt = [
-        "Você é especialista em email marketing para educação empresarial voltada a confecções no Brasil.",
-        "Empresa: Costurando Sucesso (CS) — cursos, mentorias e consultorias para gestores de confecções.",
+        "Você é especialista em email marketing para educação empresarial e growth digital no Brasil.",
+        "Empresa: Nexo Commerce — programas, imersões e consultorias de growth e performance para negócios digitais.",
         "",
         "CAMPANHA:",
         "- Nome: " + campaign.name,
@@ -892,7 +892,7 @@ function VisaoGeralAI({ campaigns, totals }: { campaigns: EmailCampaign[]; total
       const bestScore  = Math.max(...campaigns.map(c => calcDelivScore(c).score));
       const worstScore = Math.min(...campaigns.map(c => calcDelivScore(c).score));
 
-      const prompt = `Você é especialista sênior em email marketing para o setor de educação empresarial voltada para confecções e indústria têxtil no Brasil. A empresa é a Costurando Sucesso, que oferece cursos, mentorias e consultorias para empresários e gestores de confecções.
+      const prompt = `Você é especialista sênior em email marketing para o setor de educação empresarial e growth digital no Brasil. A empresa é a Nexo Commerce, que oferece programas, imersões e consultorias de growth e performance para negócios digitais.
 
 Analise o panorama completo de email marketing do período:
 

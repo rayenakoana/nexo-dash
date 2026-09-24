@@ -57,7 +57,7 @@ export default function Usuarios() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="pessoa@costurandosucesso.com"
+              placeholder="pessoa@suaempresa.com"
               required
             />
           </div>
