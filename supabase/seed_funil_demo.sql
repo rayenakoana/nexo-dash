@@ -120,7 +120,7 @@ WHERE funil IN ('Segredos da Confecção', 'Segredos da Confeccao', 'Segredos');
 -- Mantém a linha mais recente e soma os totais das duplicadas nela antes de
 -- apagar as demais, para não perder volume de leads.
 WITH duplicadas AS (
-  SELECT data, funil, array_agg(id ORDER BY created_at DESC) AS ids,
+  SELECT data, funil, array_agg(id ORDER BY id DESC) AS ids,
          SUM(leads_recebidos) AS soma_recebidos,
          SUM(leads_qualificados) AS soma_qualificados,
          SUM(reunioes_agendadas) AS soma_agendadas,
@@ -140,7 +140,7 @@ FROM duplicadas d
 WHERE m.id = d.ids[1];
 
 DELETE FROM metricas_diarias m USING (
-  SELECT data, funil, array_agg(id ORDER BY created_at DESC) AS ids
+  SELECT data, funil, array_agg(id ORDER BY id DESC) AS ids
   FROM metricas_diarias GROUP BY data, funil HAVING count(*) > 1
 ) d
 WHERE m.id = ANY(d.ids[2:]);
