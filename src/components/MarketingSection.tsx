@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { EmailMarketingSection } from "@/components/EmailMarketingSection";
 import { GlassCard } from "@/components/GlassCard";
+import { AIAnalysisButton } from "@/components/AIAnalysisButton";
 import { KPICard } from "@/components/KPICard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMetaAdsInsights } from "@/hooks/useMetaAdsInsights";
@@ -477,6 +478,22 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
       {tab==="meta" && (
         <div className="space-y-4">
 
+          <div className="flex justify-end">
+            <AIAnalysisButton section="Meta Ads" dataPayload={{
+              investido_total: metaTotais.spend,
+              leads: metaTotais.leads,
+              cpl_medio: metaCPL,
+              compras: metaTotais.purchases,
+              receita: metaTotais.purchase_value,
+              roas: metaROAS,
+              ctr: metaCTR,
+              cpc: metaCPC,
+              alcance: metaTotais.reach ?? 0,
+              frequencia_media: metaFreqMedia,
+              campanhas: porCampanhaRich,
+            }} />
+          </div>
+
           {/* KPIs linha 1 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {loadingMeta ? Array.from({length:4}).map((_,i) => <Skeleton key={i} className="h-[90px] rounded-xl"/>) : (<>
@@ -649,6 +666,17 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
       {/* ── WPP ── */}
       {tab==="wpp" && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <AIAnalysisButton section="WhatsApp Campanhas" dataPayload={{
+              campanhas_disparadas: wppTotais?.campanhas ?? 0,
+              enviadas: wppTotais?.enviadas ?? 0,
+              entregues: wppTotais?.entregues ?? 0,
+              taxa_entrega: wppTotais?.taxaEntrega ?? 0,
+              lidas: wppTotais?.lidas ?? 0,
+              taxa_leitura: wppTotais?.taxaLeitura ?? 0,
+              campanhas: wppCampanhas,
+            }} />
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {loadingWpp ? Array.from({length:4}).map((_,i) => <Skeleton key={i} className="h-[90px] rounded-xl"/>) : (<>
               <KPICard title="Campanhas"  value={wppTotais?.campanhas??0}     subtitle="Disparadas no período" icon={MessageCircle}/>
@@ -714,20 +742,38 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
         <div className="space-y-4">
 
           {/* Filtro de conta */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Conta:</span>
-            <div className="flex gap-1 p-0.5 rounded-lg border border-border bg-card/40">
-              {([null, "nexocommerce", "nexolab"] as (string|null)[]).map(acc => (
-                <button key={acc??"todas"} onClick={() => setIgAccount(acc)}
-                  className={cn("px-3 py-1 rounded-md text-xs font-semibold transition-all",
-                    igAccount===acc
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}>
-                  {acc===null?"Todas":acc==="nexocommerce"?"@NC":"@NL"}
-                </button>
-              ))}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Conta:</span>
+              <div className="flex gap-1 p-0.5 rounded-lg border border-border bg-card/40">
+                {([null, "nexocommerce", "nexolab"] as (string|null)[]).map(acc => (
+                  <button key={acc??"todas"} onClick={() => setIgAccount(acc)}
+                    className={cn("px-3 py-1 rounded-md text-xs font-semibold transition-all",
+                      igAccount===acc
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}>
+                    {acc===null?"Todas":acc==="nexocommerce"?"@NC":"@NL"}
+                  </button>
+                ))}
+              </div>
             </div>
+            <AIAnalysisButton section="Instagram" dataPayload={{
+              conta_filtrada: igAccount ?? "todas",
+              posts_no_periodo: postsFiltered.length,
+              engajamento_total: igEngTotal,
+              alcance_total: igAlcance,
+              views_totais: igViews,
+              taxa_engajamento: igTaxaEng,
+              engajamento_medio_por_post: igEngPost,
+              posts: postsFiltered.map(p => ({
+                name: p.caption?.slice(0, 40) ?? p.username,
+                like_count: p.like_count,
+                comments_count: p.comments_count,
+                reach: p.reach,
+              })),
+              performance_por_formato: porFormato,
+            }} />
           </div>
 
           {/* KPIs */}

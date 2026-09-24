@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Sparkles, X, Loader2 } from "lucide-react";
+import { Sparkles, X, Loader2, CheckCircle2, AlertCircle, TriangleAlert, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { gerarAnaliseSimuladaEstruturada, StructuredAnalysis } from "@/lib/simulatedAnalysis";
 
 const SYSTEM_PROMPT = [
   "Você é um analista comercial especializado em educação empresarial e consultoria de negócios, trabalhando para a Nexo Dash.",
@@ -38,69 +39,24 @@ interface AIAnalysisButtonProps {
   className?: string;
 }
 
-// Fallback local, sem chamada de rede: gera uma análise "template-based" a
-// partir dos números já carregados na tela (dataPayload), para que o botão
-// nunca fique quebrado/vazio quando a IA real falhar (sem VITE_ANTHROPIC_API_KEY,
-// sem rede, timeout, resposta inesperada da API etc). Deixado claramente
-// rotulado como simulado — não inventa nenhum número, só descreve o que já
-// está no payload.
-function formatNum(n: number): string {
-  if (!isFinite(n)) return "0";
-  return Math.abs(n) >= 1000 ? n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : n.toFixed(n % 1 === 0 ? 0 : 1);
-}
-
-function gerarAnaliseSimulada(section: string, dataPayload: Record<string, unknown>): string {
-  const frases: string[] = [];
-
-  // 1) Métricas simples (número/string) no topo do payload
-  const metricas = Object.entries(dataPayload).filter(
-    ([, v]) => typeof v === "number" || typeof v === "string"
-  ) as [string, number | string][];
-  const metricasNumericas = metricas.filter(([, v]) => typeof v === "number") as [string, number][];
-
-  if (metricasNumericas.length > 0) {
-    const destaque = metricasNumericas.reduce((a, b) => (Math.abs(b[1]) > Math.abs(a[1]) ? b : a));
-    frases.push(`O indicador de maior magnitude no período foi "${destaque[0]}", em ${formatNum(destaque[1])}.`);
-  }
-
-  // 2) Listas de itens (campanhas, posts, canais...) — acha o de melhor/pior desempenho
-  //    olhando o primeiro campo numérico "de desempenho" comum (valor, spend, reach, entregues, ctr, roas...)
-  const camposPreferidos = ["valor", "totalVendido", "roas", "reach", "entregues", "likes", "like_count", "followers_count", "spend", "leads", "purchases"];
-  const listas = Object.entries(dataPayload).filter(([, v]) => Array.isArray(v) && (v as unknown[]).length > 0) as [string, Record<string, unknown>[]][];
-
-  for (const [chave, itens] of listas.slice(0, 3)) {
-    const amostra = itens[0];
-    if (!amostra || typeof amostra !== "object") continue;
-    const campoNumerico = camposPreferidos.find(c => typeof (amostra as any)[c] === "number")
-      ?? Object.keys(amostra).find(c => typeof (amostra as any)[c] === "number");
-    if (!campoNumerico) continue;
-
-    const ordenado = [...itens].sort((a: any, b: any) => (b[campoNumerico] ?? 0) - (a[campoNumerico] ?? 0));
-    const melhor: any = ordenado[0];
-    const nomeCampo = (melhor.name ?? melhor.nome ?? melhor.funil ?? melhor.produto ?? melhor.campaign_name ?? melhor.username ?? "item 1");
-    if (melhor) {
-      frases.push(`Em "${chave}", o destaque foi "${nomeCampo}", com ${campoNumerico} de ${formatNum(melhor[campoNumerico])} — ${itens.length} registro(s) analisado(s) no total.`);
-    }
-  }
-
-  if (frases.length === 0) {
-    frases.push(`Não há dados suficientes carregados em "${section}" no período selecionado para destacar um padrão específico.`);
-  }
-
-  frases.push("Esta é uma análise gerada localmente a partir dos números já exibidos na tela — recomenda-se revisão humana antes de decisões comerciais.");
-
-  return frases.join(" ");
-}
+// Fallback local, sem chamada de rede: gera uma análise estruturada
+// "template-based" a partir dos números já carregados na tela (dataPayload),
+// para que o botão nunca fique quebrado/vazio quando a IA real falhar (sem
+// VITE_ANTHROPIC_API_KEY, sem rede, timeout, resposta inesperada da API etc).
+// Deixado claramente rotulado como simulado — não inventa nenhum número, só
+// descreve o que já está no payload. Lógica compartilhada em
+// src/lib/simulatedAnalysis.ts.
 
 export function AIAnalysisButton({ section, dataPayload, className }: AIAnalysisButtonProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<string>("");
+  const [structured, setStructured] = useState<StructuredAnalysis | null>(null);
   const [simulado, setSimulado] = useState(false);
   const [error, setError] = useState<string>("");
 
   async function runAnalysis() {
-    if (analysis) { setOpen(true); return; }
+    if (analysis || structured) { setOpen(true); return; }
     setOpen(true);
     setLoading(true);
     setError("");
@@ -111,7 +67,7 @@ export function AIAnalysisButton({ section, dataPayload, className }: AIAnalysis
 
     // Sem chave configurada: nem tenta a rede, cai direto no fallback simulado.
     if (!apiKey) {
-      setAnalysis(gerarAnaliseSimulada(section, dataPayload));
+      setStructured(gerarAnaliseSimuladaEstruturada(section, dataPayload));
       setSimulado(true);
       setLoading(false);
       return;
@@ -146,7 +102,7 @@ export function AIAnalysisButton({ section, dataPayload, className }: AIAnalysis
     } catch {
       // Qualquer falha (sem rede, chave inválida, timeout, resposta inesperada)
       // cai num fallback local — nunca deixa o botão sem resultado nenhum.
-      setAnalysis(gerarAnaliseSimulada(section, dataPayload));
+      setStructured(gerarAnaliseSimuladaEstruturada(section, dataPayload));
       setSimulado(true);
     } finally {
       setLoading(false);
@@ -193,9 +149,57 @@ export function AIAnalysisButton({ section, dataPayload, className }: AIAnalysis
             <div className="text-xs text-foreground/85 leading-relaxed whitespace-pre-wrap">{analysis}</div>
           )}
 
-          {!loading && analysis && (
+          {!loading && structured && (
+            <div className="space-y-4">
+              <p className="text-[11px] text-foreground/90 leading-relaxed">{structured.headline}</p>
+
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1">
+                  <Trophy className="h-3 w-3" /> Pontos positivos
+                </p>
+                <ul className="space-y-1">
+                  {structured.pontos.map((p, i) => (
+                    <li key={i} className="flex gap-1.5 text-[11px] text-foreground/80">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-primary mb-1.5 flex items-center gap-1">
+                  <TriangleAlert className="h-3 w-3" /> Pontos de atenção
+                </p>
+                <ul className="space-y-1">
+                  {structured.riscos.map((r, i) => (
+                    <li key={i} className="flex gap-1.5 text-[11px] text-foreground/80">
+                      <AlertCircle className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-gold mb-1.5 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" /> Recomendações
+                </p>
+                <ul className="space-y-1">
+                  {structured.recomendacoes.map((rec, i) => (
+                    <li key={i} className="flex gap-1.5 text-[11px] text-foreground/80">
+                      <span className="text-gold font-bold shrink-0">{i + 1}.</span>
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {!loading && (analysis || structured) && (
             <button
-              onClick={() => { setAnalysis(""); setSimulado(false); runAnalysis(); }}
+              onClick={() => { setAnalysis(""); setStructured(null); setSimulado(false); runAnalysis(); }}
               className="mt-3 text-[10px] text-muted-foreground hover:text-primary transition-colors"
             >
               Reanalisar
