@@ -32,7 +32,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend, ComposedChart, Area,
 } from "recharts";
 
-const COLORS = ["#C8102E", "#E8384F", "#FF6B6B", "#FF8E8E", "#FFB4B4", "#991B1B", "#FCA5A5"];
+const COLORS = ["#3B82F6", "#22D3EE", "#8B5CF6", "#60A5FA", "#2563EB", "#0EA5E9", "#93C5FD"];
 
 const PERIOD_OPTIONS = [
   { value: "today", label: "Hoje" },
@@ -324,10 +324,10 @@ export default function Index() {
   // === Chart data ===
   const funnelData = useMemo(() => {
     return [
-      { name: "Leads", value: totalLeadsDiarios, fill: "#C8102E" },
-      { name: "MQL", value: totalMQLDiarios, fill: "#E8384F" },
-      { name: "Reunião", value: totalAgendadas, fill: "#FF6B6B" },
-      { name: "Fechado", value: fechadasSafra.length, fill: "#FF8E8E" },
+      { name: "Leads", value: totalLeadsDiarios, fill: "#2563EB" },
+      { name: "MQL", value: totalMQLDiarios, fill: "#3B82F6" },
+      { name: "Reunião", value: totalAgendadas, fill: "#60A5FA" },
+      { name: "Fechado", value: fechadasSafra.length, fill: "#22D3EE" },
     ];
   }, [totalLeadsDiarios, totalMQLDiarios, totalAgendadas, fechadasSafra]);
 
@@ -661,7 +661,7 @@ export default function Index() {
               <XAxis dataKey="data" tick={{ fill: "#666", fontSize: 11 }} />
               <YAxis tick={{ fill: "#666", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
-              <Bar dataKey="valor" fill="#C8102E" radius={[4, 4, 0, 0]} name="Faturamento" />
+              <Bar dataKey="valor" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Faturamento" />
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -699,18 +699,18 @@ export default function Index() {
             <ComposedChart data={conversionLineData}>
               <defs>
                 <linearGradient id="gradQualificados" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#E8384F" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#E8384F" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="data" tick={{ fill: "#666", fontSize: 11 }} />
               <YAxis tick={{ fill: "#666", fontSize: 11 }} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="Leads Qualificados" stroke="#E8384F" strokeWidth={2.5}
+              <Area type="monotone" dataKey="Leads Qualificados" stroke="#3B82F6" strokeWidth={2.5}
                 fill="url(#gradQualificados)" dot={false} activeDot={{ r: 4 }} />
-              <Line type="monotone" dataKey="Reuniões Agendadas" stroke="#EF9F27" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Compareceram" stroke="#5DCAA5" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Reuniões Agendadas" stroke="#22D3EE" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Compareceram" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
@@ -824,8 +824,8 @@ export default function Index() {
               <BarChart data={segmentoData} layout="vertical" margin={{ left: 20 }}>
                 <defs>
                   <linearGradient id="gradBarSegmento" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#991B1B" />
-                    <stop offset="100%" stopColor="#E8384F" />
+                    <stop offset="0%" stopColor="#2563EB" />
+                    <stop offset="100%" stopColor="#3B82F6" />
                   </linearGradient>
                 </defs>
                 <XAxis type="number" tick={{ fill: "#666", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
@@ -847,7 +847,7 @@ export default function Index() {
                 <XAxis type="number" tick={{ fill: "#666", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                 <YAxis dataKey="name" type="category" tick={{ fill: "#999", fontSize: 11 }} width={100} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toLocaleString("pt-BR")}`} />
-                <Bar dataKey="value" fill="#E8384F" radius={[0, 6, 6, 0]} barSize={20} />
+                <Bar dataKey="value" fill="#3B82F6" radius={[0, 6, 6, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -866,8 +866,8 @@ export default function Index() {
               <XAxis dataKey="data" tick={{ fill: "#666", fontSize: 11 }} />
               <YAxis tick={{ fill: "#666", fontSize: 11 }} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="Confirmado" fill="#333" radius={[4, 4, 0, 0]} name="Confirmados SDR" />
-              <Bar dataKey="Real" fill="#C8102E" radius={[4, 4, 0, 0]} name="Compareceram" />
+              <Bar dataKey="Confirmado" fill="#475569" radius={[4, 4, 0, 0]} name="Confirmados SDR" />
+              <Bar dataKey="Real" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Compareceram" />
             </BarChart>
           </ResponsiveContainer>
         ) : (

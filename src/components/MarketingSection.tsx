@@ -36,8 +36,8 @@ const fmtFull = (n: number) => n.toLocaleString("pt-BR");
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 const pct = (n: number) => n.toFixed(1) + "%";
 
-const P  = "hsl(355 82% 51%)";
-const P2 = "hsl(355 82% 51% / 0.5)";
+const P  = "hsl(213 94% 55%)";
+const P2 = "hsl(213 94% 55% / 0.5)";
 const MUTED = "hsl(0 0% 60%)";
 
 type Tab = "meta" | "wpp" | "instagram" | "email";
@@ -961,7 +961,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     <Tooltip {...TT} formatter={(v:number) => [`${v}`, "Eng. médio"]}/>
                     <Bar dataKey="engMedio" name="Eng. médio" radius={[4,4,0,0]}>
                       {horarioData.map(d => (
-                        <Cell key={d.hora} fill={`hsl(355 82% 51% / ${(0.3 + (d.engMedio/maxHorario)*0.7).toFixed(2)})`}/>
+                        <Cell key={d.hora} fill={`hsl(213 94% 55% / ${(0.3 + (d.engMedio/maxHorario)*0.7).toFixed(2)})`}/>
                       ))}
                     </Bar>
                   </BarChart>
@@ -1075,7 +1075,7 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     <Tooltip {...TT} formatter={(v:number) => `${v}%`}/>
                     <Bar dataKey="pctSeguidores" name="% alcance vs seguidores" fill={P} radius={[4,4,0,0]}>
                       {alcanceVsSeguidores.map((_, i) => (
-                        <Cell key={i} fill={`hsl(355 82% 51% / ${0.5 + i * 0.1})`}/>
+                        <Cell key={i} fill={`hsl(213 94% 55% / ${0.5 + i * 0.1})`}/>
                       ))}
                     </Bar>
                   </BarChart>
@@ -1118,8 +1118,8 @@ Responda em 4 seções curtas (máx. 2 frases cada), sem emoji, sem markdown, s�
                     <span key={h.tag}
                       className={cn("px-2.5 py-1 rounded-full border transition-colors", ratio>0.7?"text-xs":"text-[10px]")}
                       style={{
-                        background:  `hsl(355 82% 51% / ${(0.05+ratio*0.15).toFixed(2)})`,
-                        borderColor: `hsl(355 82% 51% / ${(0.15+ratio*0.25).toFixed(2)})`,
+                        background:  `hsl(213 94% 55% / ${(0.05+ratio*0.15).toFixed(2)})`,
+                        borderColor: `hsl(213 94% 55% / ${(0.15+ratio*0.25).toFixed(2)})`,
                         color: `hsl(0 0% ${55+ratio*41}%)`,
                         fontWeight: ratio>0.5?600:400,
                       }}>

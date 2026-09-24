@@ -73,7 +73,7 @@ export function MetaXVendidoFunil() {
               <div className="flex items-center gap-2 mb-2.5">
                 <span
                   className="h-2.5 w-2.5 rounded-full shrink-0"
-                  style={{ background: FUNIL_CORES[funil] || "#C8102E" }}
+                  style={{ background: FUNIL_CORES[funil] || "#3B82F6" }}
                 />
                 <span className="text-sm font-medium truncate">{funil}</span>
               </div>
@@ -92,7 +92,7 @@ export function MetaXVendidoFunil() {
                     className="h-full rounded-full transition-all opacity-70"
                     style={{
                       width: `${metaQtd > 0 ? pctQtd : 0}%`,
-                      background: FUNIL_CORES[funil] || "#C8102E",
+                      background: FUNIL_CORES[funil] || "#3B82F6",
                     }}
                   />
                 </div>
@@ -113,7 +113,7 @@ export function MetaXVendidoFunil() {
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${meta > 0 ? pct : 0}%`,
-                      background: FUNIL_CORES[funil] || "#C8102E",
+                      background: FUNIL_CORES[funil] || "#3B82F6",
                     }}
                   />
                 </div>

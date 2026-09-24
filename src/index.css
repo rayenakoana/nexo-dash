@@ -37,6 +37,16 @@
     --sidebar-ring: 213 94% 55%;
     --gradient-red: linear-gradient(135deg, hsl(213 94% 55%), hsl(213 90% 35%));
     --gradient-red-soft: linear-gradient(180deg, hsl(213 94% 55% / 0.85), hsl(213 90% 35% / 0.6));
+
+    /* Centralized chart / data-viz palette (brand rebrand: blue family) */
+    --primary-light: 213 94% 68%;   /* #60A5FA */
+    --chart-1: 213 94% 55%;         /* #3B82F6 primary */
+    --chart-2: 189 94% 50%;         /* #22D3EE cyan */
+    --chart-3: 258 90% 66%;         /* #8B5CF6 violet */
+    --chart-4: 213 94% 68%;         /* #60A5FA primary light */
+    --success: 142 71% 45%;         /* green — positive / above target */
+    --warning: 38 92% 50%;          /* amber — attention / near target */
+    --danger: 0 84% 60%;            /* red — negative / below target (semantic only) */
   }
   html.light {
     --background: 210 40% 96%;
@@ -69,6 +79,15 @@
     --sidebar-ring: 213 94% 48%;
     --gradient-red: linear-gradient(135deg, hsl(213 94% 48%), hsl(213 90% 32%));
     --gradient-red-soft: linear-gradient(180deg, hsl(213 94% 48% / 0.85), hsl(213 90% 32% / 0.6));
+
+    --primary-light: 213 94% 60%;
+    --chart-1: 213 94% 48%;
+    --chart-2: 189 94% 42%;
+    --chart-3: 258 85% 58%;
+    --chart-4: 213 94% 60%;
+    --success: 142 71% 38%;
+    --warning: 38 92% 42%;
+    --danger: 0 74% 48%;
   }
 }
 

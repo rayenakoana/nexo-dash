@@ -32,7 +32,7 @@ const TT = {
   cursor:     { fill: "hsl(0 0% 100% / 0.03)" },
 };
 
-const P     = "hsl(355 82% 51%)";
+const P     = "hsl(213 94% 55%)";
 const GOLD  = "hsl(43 96% 56%)";
 const GREEN = "hsl(142 71% 45%)";
 const MUTED = "hsl(0 0% 50%)";

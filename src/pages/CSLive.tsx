@@ -126,10 +126,10 @@ export default function CSLive() {
       particleCount: 140,
       spread: 90,
       origin: { y: 0.6 },
-      colors: ["#E8192C", "#C9A017", "#ffffff", "#8a1520"],
+      colors: ["#3B82F6", "#22D3EE", "#ffffff", "#2563EB"],
     });
-    setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0 }, colors: ["#E8192C", "#C9A017", "#ffffff", "#8a1520"] }), 200);
-    setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 }, colors: ["#E8192C", "#C9A017", "#ffffff", "#8a1520"] }), 400);
+    setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0 }, colors: ["#3B82F6", "#22D3EE", "#ffffff", "#2563EB"] }), 200);
+    setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 }, colors: ["#3B82F6", "#22D3EE", "#ffffff", "#2563EB"] }), 400);
 
     // Emoji pop
     setPop({ emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)], key: Date.now() });

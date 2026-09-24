@@ -119,9 +119,9 @@ export function WorldToBrazilMap({ countryData, stateData }: WorldToBrazilMapPro
   const colorFor = (v: number, max: number) => {
     const intensity = v / max;
     if (v === 0) return "#1c1c24";
-    if (intensity > 0.6) return "#E8384F";
-    if (intensity > 0.25) return "#B24A3A";
-    return "#3a3040";
+    if (intensity > 0.6) return "#3B82F6";
+    if (intensity > 0.25) return "#2C5C8A";
+    return "#26344a";
   };
 
   return (

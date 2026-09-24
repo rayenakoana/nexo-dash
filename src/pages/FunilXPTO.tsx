@@ -40,11 +40,11 @@ function getStatusColor(real: number, meta: number) {
 
 // Paleta de cores por etapa do funil (do topo ao fundo)
 const FUNIL_ETAPA_CORES = [
-  "#b91c1c", // Leads — vermelho escuro
-  "#C8102E", // MQL
-  "#e02040", // Reuniões agendadas
-  "#e8384f", // Reuniões realizadas
-  "#f05a6e", // Propostas
+  "#2563EB", // Leads — azul forte (primary-dark)
+  "#3B82F6", // MQL — azul primário
+  "#3B82F6", // Reuniões agendadas
+  "#60A5FA", // Reuniões realizadas — azul claro
+  "#22D3EE", // Propostas — ciano
   "#16a34a", // Fechados — verde sempre
 ];
 
@@ -69,7 +69,7 @@ function TrapezioFunil({
           ? maxW - ((maxW - minW) / (etapas.length - 1)) * (i + 1)
           : widthPct;
         const conv = conversoes[i - 1];
-        const cor = FUNIL_ETAPA_CORES[i] ?? "#E8192C";
+        const cor = FUNIL_ETAPA_CORES[i] ?? "#3B82F6";
 
         // clip-path trapézio: estreita de widthPct para nextWidthPct
         const leftInset = ((widthPct - nextWidthPct) / widthPct / 2) * 100;
@@ -180,7 +180,7 @@ export default function FunilXPTO() {
 
   const cpl = data.leadsPagos > 0 ? totalCustosAds / data.leadsPagos : 0;
   const cac = data.fechados > 0 ? totalCustosAds / data.fechados : 0;
-  const corPrincipal = todosSelecionados ? "#E8192C" : (FUNIL_CORES[funisSel[0]] ?? "#E8192C");
+  const corPrincipal = todosSelecionados ? "#3B82F6" : (FUNIL_CORES[funisSel[0]] ?? "#3B82F6");
 
   function toggleFunil(funil: string) {
     setFunisSel(prev => prev.includes(funil) ? prev.filter(f => f !== funil) : [...prev, funil]);
