@@ -2,14 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LeadGeografiaRow {
-  deal_id: string;
+  id: string;
   pipeline_id: string | null;
   pais: string | null;
   uf: string | null;
   estado: string | null;
-  regiao: string | null;
   cidade: string | null;
-  estado_organizacao: string | null;
   rating: number | null;
   created_at: string;
 }
@@ -24,9 +22,13 @@ export function useLeadsGeografia() {
       let from = 0;
       // Paginação necessária: PostgREST trunca em 1000 linhas por padrão
       while (true) {
+        // Esquema real da tabela (confirmado via information_schema.columns):
+        // id, rating, pipeline_id, deletado, pais, estado, cidade, created_at.
+        // Não existem colunas deal_id/uf/regiao/estado_organizacao — selecioná-las
+        // fazia o PostgREST rejeitar a query inteira (erro), deixando o mapa vazio.
         const { data, error } = await supabase
           .from("leads_geografia")
-          .select("deal_id, pipeline_id, pais, uf, estado, regiao, cidade, estado_organizacao, rating, created_at")
+          .select("id, pipeline_id, pais, estado, cidade, rating, created_at")
           .eq("deletado", false)
           .range(from, from + PAGE_SIZE - 1);
         if (error) throw error;

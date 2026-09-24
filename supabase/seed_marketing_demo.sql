@@ -167,6 +167,18 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Reforço de permissões — RLS por si só NÃO libera leitura: o Postgres
+-- também exige GRANT de USAGE no schema e SELECT nas tabelas para as roles
+-- que o PostgREST usa (anon/authenticated), senão a query falha com
+-- "permission denied" mesmo com a policy acima criada. Isso é a causa mais
+-- comum de uma tabela nova de um schema customizado (que não é "public")
+-- aparecer vazia/quebrada no frontend enquanto outras tabelas do mesmo
+-- schema funcionam — cobrindo aqui também tabelas futuras (DEFAULT
+-- PRIVILEGES), para não repetir esse problema em novos rounds.
+GRANT USAGE ON SCHEMA wpp TO anon, authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA wpp TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA wpp GRANT SELECT ON TABLES TO anon, authenticated;
+
 SELECT setseed(0.4242);
 
 -- -----------------------------------------------------------------------------
