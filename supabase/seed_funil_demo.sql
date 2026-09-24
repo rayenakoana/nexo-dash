@@ -87,23 +87,14 @@ UPDATE vendas SET funil = 'Expansão'
 WHERE funil IN ('Segredos da Confecção', 'Segredos da Confeccao', 'Segredos');
 
 -- -----------------------------------------------------------------------------
--- 3) configuracoes.funil — metas por funil (tipo='Meta Funil'/'Meta Funil
---    Qtd', gravadas por src/pages/Metas.tsx). Mesma coluna `funil`.
+-- 3) configuracoes.funil — REMOVIDO. Confirmado via information_schema.columns
+--    neste projeto que a tabela `configuracoes` real só tem (id, tipo, valor)
+--    — não existe coluna `funil` nem `mes_ref`. A feature de "meta por funil"
+--    com granularidade própria (que MetaXVendidoFunil.tsx tenta ler via
+--    m.funil/m.mes_ref) não está presente neste schema; não há nada para
+--    sanitizar aqui. (Erro original: "column funil does not exist" na
+--    tentativa de UPDATE configuracoes SET funil = ...).
 -- -----------------------------------------------------------------------------
-UPDATE configuracoes SET funil = 'Workshop'
-WHERE funil IN ('Supplytex', 'SUPPLYTEX');
-
-UPDATE configuracoes SET funil = 'Membership'
-WHERE funil IN ('UniForce');
-
-UPDATE configuracoes SET funil = 'Imersão Premium'
-WHERE funil IN ('Imersão Paraguai', 'Imersao Paraguai', 'Paraguai');
-
-UPDATE configuracoes SET funil = 'Consultoria'
-WHERE funil IN ('CS Club', 'C$ Club', 'CS  Club');
-
-UPDATE configuracoes SET funil = 'Expansão'
-WHERE funil IN ('Segredos da Confecção', 'Segredos da Confeccao', 'Segredos');
 
 -- -----------------------------------------------------------------------------
 -- 4) metricas_diarias.funil — métricas diárias de leads por funil (usada em
