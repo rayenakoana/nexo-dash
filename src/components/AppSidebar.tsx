@@ -3,6 +3,7 @@ import {
   BarChart3, ShoppingCart, CalendarPlus, Layers,
   DollarSign, Target, Settings, Users, Map,
   Radio, GitMerge, LogOut, Sun, Moon, Maximize, Minimize, TrendingUp,
+  LayoutDashboard, UserCheck, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -15,6 +16,13 @@ const publicItems = [
   { title: "Nexo Live",         url: "/live",        icon: Radio },
   { title: "Funil XPTO",      url: "/funil-xpto",  icon: GitMerge },
   { title: "Marketing",        url: "/marketing",    icon: TrendingUp },
+];
+
+const clubItems = [
+  { title: "Dashboard",  url: "/club",           icon: LayoutDashboard, end: true },
+  { title: "Membros",    url: "/club/membros",   icon: UserCheck },
+  { title: "Financeiro", url: "/club/financeiro",icon: DollarSign },
+  { title: "Planos",     url: "/club/planos",    icon: FileText },
 ];
 
 const adminItems = [
@@ -92,6 +100,28 @@ export function AppSidebar() {
         ))}
 
         {/* Divider */}
+        <div className="my-2 border-t border-border/60 mx-1" />
+
+        {/* Club ERP */}
+        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60 px-3 pb-1.5">
+          CS Club ERP
+        </p>
+        {clubItems.map(({ title, url, icon: Icon, end }) => (
+          <NavLink
+            key={url}
+            to={url}
+            end={end}
+            className={({ isActive }) =>
+              isActive
+                ? "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all relative bg-[hsl(355,82%,51%)]/10 text-[hsl(355,82%,51%)] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-[2.5px] before:rounded-r-sm before:bg-[hsl(355,82%,51%)]"
+                : "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all relative text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+            }
+          >
+            <Icon className="w-[15px] h-[15px] shrink-0" />
+            {title}
+          </NavLink>
+        ))}
+
         <div className="my-2 border-t border-border/60 mx-1" />
 
         {/* Admin */}

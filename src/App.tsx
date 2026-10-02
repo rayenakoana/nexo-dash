@@ -21,6 +21,11 @@ import ResetPassword from "./pages/ResetPassword";
 import Usuarios from "./pages/admin/Usuarios";
 import NotFound from "./pages/NotFound";
 import MarketingDashboard from "./pages/MarketingDashboard";
+import ClubDashboard from "./pages/club/ClubDashboard";
+import ClubMembros from "./pages/club/ClubMembros";
+import ClubMembroPerfil from "./pages/club/ClubMembroPerfil";
+import ClubFinanceiro from "./pages/club/ClubFinanceiro";
+import ClubPlanos from "./pages/club/ClubPlanos";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +56,13 @@ function Shell() {
       <AppSidebar />
       <main className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
         <Routes>
+          {/* Club ERP */}
+          <Route path="/club" element={<ClubDashboard />} />
+          <Route path="/club/membros" element={<ClubMembros />} />
+          <Route path="/club/membros/:id" element={<ClubMembroPerfil />} />
+          <Route path="/club/financeiro" element={<ClubFinanceiro />} />
+          <Route path="/club/planos" element={<ClubPlanos />} />
+
           {/* Públicas */}
           <Route path="/" element={<Index />} />
           <Route path="/funil-xpto" element={<FunilXPTO />} />
